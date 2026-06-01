@@ -1,0 +1,374 @@
+<!-- School switcher (shown only when owner has multiple schools) -->
+<% if (ownedSchools && ownedSchools.length > 1) { %>
+    <div class="d-flex align-items-center gap-2 mb-4 flex-wrap">
+        <span class="small text-muted fw-medium me-1">My Schools:</span>
+        <% ownedSchools.forEach(s => { %>
+            <a href="/schools/mine/<%= s.id %>/manage"
+               class="btn btn-sm <%= s.id === school.id ? 'btn-dark' : 'btn-outline-secondary' %>">
+                <%= s.name %>
+            </a>
+        <% }) %>
+        <a href="/schools/mine/new" class="btn btn-sm btn-outline-danger ms-1">
+            <i class="bi bi-plus me-1"></i>Add School
+        </a>
+    </div>
+<% } %>
+
+<!-- Header -->
+<div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
+    <div>
+        <h2 class="h4 fw-bold mb-1"><%= school.name %></h2>
+        <p class="text-muted small mb-0">
+            <a href="/schools/<%= school.slug %>" class="text-decoration-none me-3">
+                <i class="bi bi-eye me-1"></i>Public page
+            </a>
+            <a href="/schools/mine/<%= school.id %>/edit" class="text-decoration-none">
+                <i class="bi bi-pencil me-1"></i>Edit profile
+            </a>
+        </p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="/events/create?school=<%= school.id %>" class="btn btn-danger btn-sm">
+            <i class="bi bi-calendar-plus me-1"></i>Create Event
+        </a>
+        <a href="/instructors" class="btn btn-outline-danger btn-sm">
+            <i class="bi bi-person-plus me-1"></i>Request Judge
+        </a>
+    </div>
+</div>
+
+<!-- Stats row -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="fs-3 fw-bold text-danger"><%= totalEvents %></div>
+            <div class="small text-muted">Total Events</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="fs-3 fw-bold text-danger"><%= totalRequests %></div>
+            <div class="small text-muted">Judge Requests</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="fs-3 fw-bold text-danger"><%= roster.length %></div>
+            <div class="small text-muted">Roster Instructors</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm text-center p-3">
+            <div class="fs-3 fw-bold <%= school.is_active ? 'text-success' : 'text-secondary' %>">
+                <%= school.is_active ? 'Active' : 'Hidden' %>
+            </div>
+            <div class="small text-muted">Profile Status</div>
+        </div>
+    </div>
+</div>
+
+<!-- Main content tabs -->
+<ul class="nav nav-tabs mb-4" id="manageTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="events-tab" data-bs-toggle="tab"
+                data-bs-target="#events-pane" type="button">
+            <i class="bi bi-calendar3 me-1"></i>Events
+            <span class="badge bg-secondary ms-1"><%= totalEvents %></span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="requests-tab" data-bs-toggle="tab"
+                data-bs-target="#requests-pane" type="button">
+            <i class="bi bi-envelope me-1"></i>Judge Requests
+            <span class="badge bg-secondary ms-1"><%= totalRequests %></span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="roster-tab" data-bs-toggle="tab"
+                data-bs-target="#roster-pane" type="button">
+            <i class="bi bi-people me-1"></i>Roster
+            <span class="badge bg-secondary ms-1"><%= roster.length %></span>
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+
+    <!-- ── Events tab ──────────────────────────────────────────────────────── -->
+    <div class="tab-pane fade show active" id="events-pane" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+                <span class="fw-semibold">Recent Events</span>
+                <a href="/events/create" class="btn btn-danger btn-sm">
+                    <i class="bi bi-plus me-1"></i>Create Event
+                </a>
+            </div>
+            <% if (recentEvents.length === 0) { %>
+                <div class="card-body text-center text-muted py-5">
+                    <i class="bi bi-calendar-x fs-2 d-block mb-2 opacity-25"></i>
+                    <p class="mb-2">No events yet.</p>
+                    <a href="/events/create" class="btn btn-sm btn-danger">Create your first event</a>
+                </div>
+            <% } else { %>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Event</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% recentEvents.forEach(ev => { %>
+                                <tr>
+                                    <td class="fw-semibold"><%= ev.title %></td>
+                                    <td class="text-capitalize text-muted small">
+                                        <%= ev.event_type.replace('_', ' ') %>
+                                    </td>
+                                    <td class="small text-muted">
+                                        <%= new Date(ev.start_datetime).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) %>
+                                    </td>
+                                    <td>
+                                        <span class="badge <%= STATUS_BADGE[ev.status] || 'bg-secondary' %> fw-normal">
+                                            <%= ev.status %>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- ── Judge Requests tab ─────────────────────────────────────────────── -->
+    <div class="tab-pane fade" id="requests-pane" role="tabpanel">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+                <span class="fw-semibold">Sent Judge Requests</span>
+                <a href="/instructors" class="btn btn-danger btn-sm">
+                    <i class="bi bi-search me-1"></i>Find Instructors
+                </a>
+            </div>
+            <% if (recentRequests.length === 0) { %>
+                <div class="card-body text-center text-muted py-5">
+                    <i class="bi bi-envelope fs-2 d-block mb-2 opacity-25"></i>
+                    <p class="mb-2">No judge requests sent yet.</p>
+                    <a href="/instructors" class="btn btn-sm btn-danger">Browse instructors</a>
+                </div>
+            <% } else { %>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Instructor</th>
+                                <th>Event</th>
+                                <th>Requested Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <%
+                                const STATUS_COLOR = {
+                                    pending:   'bg-warning text-dark',
+                                    accepted:  'bg-success',
+                                    declined:  'bg-danger',
+                                    cancelled: 'bg-secondary',
+                                    completed: 'bg-primary'
+                                };
+                            %>
+                            <% recentRequests.forEach(req => { %>
+                                <tr>
+                                    <td class="fw-semibold">
+                                        <%= req.instructor_first_name %> <%= req.instructor_last_name %>
+                                    </td>
+                                    <td class="small text-muted">
+                                        <%= req.event_title || '—' %>
+                                    </td>
+                                    <td class="small text-muted">
+                                        <%= new Date(req.requested_date).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) %>
+                                    </td>
+                                    <td>
+                                        <span class="badge <%= STATUS_COLOR[req.status] || 'bg-secondary' %> fw-normal">
+                                            <%= req.status %>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- ── Roster tab ─────────────────────────────────────────────────────── -->
+    <div class="tab-pane fade" id="roster-pane" role="tabpanel">
+
+        <!-- Search & add form -->
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body p-4">
+                <p class="fw-semibold mb-3">
+                    <i class="bi bi-person-plus text-danger me-2"></i>Add Instructor to Roster
+                </p>
+                <form method="GET" action="/schools/mine/<%= school.id %>/manage"
+                      class="d-flex gap-2 flex-wrap">
+                    <input type="hidden" name="tab" value="roster">
+                    <div class="input-group flex-grow-1" style="max-width:400px;">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="bi bi-search text-muted"></i>
+                        </span>
+                        <input type="text" name="rosterSearch"
+                               class="form-control border-start-0 ps-0"
+                               value="<%= rosterSearch || '' %>"
+                               placeholder="Search by instructor name…">
+                    </div>
+                    <button type="submit" class="btn btn-danger">Search</button>
+                    <% if (rosterSearch) { %>
+                        <a href="/schools/mine/<%= school.id %>/manage?tab=roster"
+                           class="btn btn-outline-secondary">Clear</a>
+                    <% } %>
+                </form>
+
+                <!-- Search results -->
+                <% if (rosterSearch && rosterSearchResults.length === 0) { %>
+                    <p class="text-muted small mt-3 mb-0">
+                        No instructors found for "<%= rosterSearch %>"
+                        — try a different name or
+                        <a href="/instructors" class="text-decoration-none">browse the full directory</a>.
+                    </p>
+                <% } else if (rosterSearchResults.length > 0) { %>
+                    <ul class="list-group list-group-flush mt-3 border rounded-3">
+                        <% rosterSearchResults.forEach(inst => { %>
+                            <li class="list-group-item px-3 py-2">
+                                <div class="d-flex align-items-center gap-3">
+                                    <% if (inst.profile_photo_url) { %>
+                                        <img src="<%= inst.profile_photo_url %>"
+                                             class="rounded-circle flex-shrink-0"
+                                             width="36" height="36" style="object-fit:cover;">
+                                    <% } else { %>
+                                        <div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0"
+                                             style="width:36px;height:36px;">
+                                            <i class="bi bi-person-fill text-secondary small"></i>
+                                        </div>
+                                    <% } %>
+                                    <div class="flex-grow-1 overflow-hidden">
+                                        <div class="fw-semibold small text-truncate">
+                                            <%= inst.first_name %> <%= inst.last_name %>
+                                        </div>
+                                        <div class="text-muted" style="font-size:.72rem;">
+                                            <%= inst.rank || 'Rank not set' %>
+                                            <% if (inst.city || inst.state) { %>
+                                                · <%= [inst.city, inst.state].filter(Boolean).join(', ') %>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                    <form method="POST"
+                                          action="/schools/mine/<%= school.id %>/roster"
+                                          class="d-flex gap-2 align-items-center flex-shrink-0">
+                                        <input type="hidden" name="instructorId" value="<%= inst.id %>">
+                                        <input type="text" name="roleTitle"
+                                               class="form-control form-control-sm"
+                                               placeholder="Role (optional)"
+                                               list="roleTitleOptions"
+                                               style="width:160px;">
+                                        <datalist id="roleTitleOptions">
+                                            <option value="Head Instructor">
+                                            <option value="Instructor">
+                                            <option value="Assistant Instructor">
+                                            <option value="Certified Instructor">
+                                        </datalist>
+                                        <button type="submit" class="btn btn-success btn-sm">
+                                            <i class="bi bi-plus-lg me-1"></i>Add
+                                        </button>
+                                    </form>
+                                </div>
+                            </li>
+                        <% }) %>
+                    </ul>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Current roster -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom fw-semibold py-3">
+                Current Roster
+                <span class="badge bg-secondary ms-2 fw-normal"><%= roster.length %></span>
+            </div>
+            <% if (roster.length === 0) { %>
+                <div class="card-body text-center text-muted py-5">
+                    <i class="bi bi-people fs-2 d-block mb-2 opacity-25"></i>
+                    <p class="mb-0 small">No instructors on your roster yet. Search above to add one.</p>
+                </div>
+            <% } else { %>
+                <ul class="list-group list-group-flush">
+                    <% roster.forEach(member => { %>
+                        <li class="list-group-item px-4 py-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <% if (member.profile_photo_url) { %>
+                                    <img src="<%= member.profile_photo_url %>"
+                                         class="rounded-circle flex-shrink-0"
+                                         width="40" height="40"
+                                         style="object-fit:cover;">
+                                <% } else { %>
+                                    <div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0"
+                                         style="width:40px;height:40px;">
+                                        <i class="bi bi-person-fill text-secondary small"></i>
+                                    </div>
+                                <% } %>
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold">
+                                        <%= member.first_name %> <%= member.last_name %>
+                                        <% if (member.is_primary) { %>
+                                            <span class="badge bg-danger ms-1 fw-normal small">Primary</span>
+                                        <% } %>
+                                    </div>
+                                    <div class="small text-muted">
+                                        <%= [member.role_title, member.rank].filter(Boolean).join(' · ') %>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2 flex-shrink-0">
+                                    <a href="/judge-requests/create?instructorId=<%= member.instructor_id %>&school=<%= school.id %>"
+                                       class="btn btn-sm btn-danger" title="Send judge request">
+                                        <i class="bi bi-send"></i>
+                                    </a>
+                                    <a href="/instructors/<%= member.instructor_id %>"
+                                       class="btn btn-sm btn-outline-secondary">View</a>
+                                    <form method="POST"
+                                          action="/schools/mine/<%= school.id %>/roster/<%= member.instructor_id %>/remove"
+                                          onsubmit="return confirm('Remove <%= member.first_name %> <%= member.last_name %> from your roster?')">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                title="Remove from roster">
+                                            <i class="bi bi-x-lg"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </li>
+                    <% }) %>
+                </ul>
+            <% } %>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// Re-activate the correct tab after a page reload (search, add/remove).
+// Must use DOMContentLoaded so Bootstrap has initialised before we call show().
+document.addEventListener('DOMContentLoaded', function () {
+    const tab = new URLSearchParams(location.search).get('tab');
+    if (tab) {
+        const btn = document.getElementById(tab + '-tab');
+        if (btn) {
+            bootstrap.Tab.getOrCreateInstance(btn).show();
+            // Scroll the tab header into view on mobile
+            btn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+});
+</script>

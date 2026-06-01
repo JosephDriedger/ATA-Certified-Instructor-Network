@@ -1,0 +1,272 @@
+<div class="row justify-content-center">
+    <div class="col-12 col-sm-11 col-md-9 col-lg-7 col-xl-6">
+
+        <!-- Brand header -->
+        <div class="text-center mb-4">
+            <h1 class="fs-3 fw-bold mb-1">
+                <span class="text-danger">ATA</span> Instructor Network
+            </h1>
+            <p class="text-muted small mb-0">Create your free account</p>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4 p-md-5">
+
+                <h2 class="h5 fw-semibold mb-4 text-center">Get Started</h2>
+
+                <form action="/register" method="POST" novalidate id="registerForm">
+
+                    <!-- ── Account Type (first — drives conditional fields) ──────── -->
+                    <div class="mb-4">
+                        <label for="roleId" class="form-label fw-medium">
+                            Account Type <span class="text-danger">*</span>
+                        </label>
+                        <select id="roleId" name="roleId"
+                                class="form-select form-select-lg <%= errors.roleId ? 'is-invalid' : '' %>"
+                                required>
+                            <option value="" disabled <%= !formData.roleId ? 'selected' : '' %>>
+                                Select your role…
+                            </option>
+                            <option value="2" <%= formData.roleId == 2 ? 'selected' : '' %>>
+                                School Owner — manage a school, post events, request judges
+                            </option>
+                            <option value="1" <%= formData.roleId == 1 ? 'selected' : '' %>>
+                                Instructor — publish your profile and receive judge requests
+                            </option>
+                        </select>
+                        <% if (errors.roleId) { %>
+                            <div class="invalid-feedback"><%= errors.roleId %></div>
+                        <% } %>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- ── Personal information ──────────────────────────────────── -->
+                    <p class="fw-semibold text-muted small text-uppercase mb-3">
+                        <i class="bi bi-person me-1"></i>Personal Information
+                    </p>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label for="firstName" class="form-label fw-medium">
+                                First Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" id="firstName" name="firstName"
+                                   class="form-control <%= errors.firstName ? 'is-invalid' : '' %>"
+                                   value="<%= formData.firstName || '' %>"
+                                   placeholder="Jane"
+                                   autocomplete="given-name" required maxlength="100">
+                            <% if (errors.firstName) { %>
+                                <div class="invalid-feedback"><%= errors.firstName %></div>
+                            <% } %>
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="lastName" class="form-label fw-medium">
+                                Last Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" id="lastName" name="lastName"
+                                   class="form-control <%= errors.lastName ? 'is-invalid' : '' %>"
+                                   value="<%= formData.lastName || '' %>"
+                                   placeholder="Smith"
+                                   autocomplete="family-name" required maxlength="100">
+                            <% if (errors.lastName) { %>
+                                <div class="invalid-feedback"><%= errors.lastName %></div>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-7">
+                            <label for="email" class="form-label fw-medium">
+                                Email Address <span class="text-danger">*</span>
+                            </label>
+                            <input type="email" id="email" name="email"
+                                   class="form-control <%= errors.email ? 'is-invalid' : '' %>"
+                                   value="<%= formData.email || '' %>"
+                                   placeholder="jane@example.com"
+                                   autocomplete="email" required>
+                            <% if (errors.email) { %>
+                                <div class="invalid-feedback"><%= errors.email %></div>
+                            <% } %>
+                        </div>
+                        <div class="col-sm-5">
+                            <label for="phone" class="form-label fw-medium">Phone Number</label>
+                            <input type="tel" id="phone" name="phone"
+                                   class="form-control <%= errors.phone ? 'is-invalid' : '' %>"
+                                   value="<%= formData.phone || '' %>"
+                                   placeholder="(604) 555-0100"
+                                   autocomplete="tel" maxlength="30">
+                            <% if (errors.phone) { %>
+                                <div class="invalid-feedback"><%= errors.phone %></div>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- ── Location ──────────────────────────────────────────────── -->
+                    <p class="fw-semibold text-muted small text-uppercase mb-3">
+                        <i class="bi bi-geo-alt me-1"></i>Location
+                    </p>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-5">
+                            <label for="city" class="form-label fw-medium">City</label>
+                            <input type="text" id="city" name="city"
+                                   class="form-control <%= errors.city ? 'is-invalid' : '' %>"
+                                   value="<%= formData.city || '' %>"
+                                   placeholder="Vancouver" maxlength="100">
+                            <% if (errors.city) { %>
+                                <div class="invalid-feedback"><%= errors.city %></div>
+                            <% } %>
+                        </div>
+                        <div class="col-sm-4">
+                            <label for="province" class="form-label fw-medium">Province / State</label>
+                            <input type="text" id="province" name="province"
+                                   class="form-control <%= errors.province ? 'is-invalid' : '' %>"
+                                   value="<%= formData.province || '' %>"
+                                   placeholder="BC" maxlength="100">
+                            <% if (errors.province) { %>
+                                <div class="invalid-feedback"><%= errors.province %></div>
+                            <% } %>
+                        </div>
+                        <div class="col-sm-3">
+                            <label for="country" class="form-label fw-medium">Country</label>
+                            <input type="text" id="country" name="country"
+                                   class="form-control <%= errors.country ? 'is-invalid' : '' %>"
+                                   value="<%= formData.country || '' %>"
+                                   placeholder="CA" maxlength="100">
+                            <% if (errors.country) { %>
+                                <div class="invalid-feedback"><%= errors.country %></div>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- ── ATA Credentials ───────────────────────────────────────── -->
+                    <p class="fw-semibold text-muted small text-uppercase mb-3">
+                        <i class="bi bi-award me-1"></i>ATA Credentials
+                        <span class="text-muted fw-normal normal-case ms-1">(optional — can be added later)</span>
+                    </p>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-5">
+                            <label for="ataMemberNumber" class="form-label fw-medium">ATA Member Number</label>
+                            <input type="text" id="ataMemberNumber" name="ataMemberNumber"
+                                   class="form-control <%= errors.ataMemberNumber ? 'is-invalid' : '' %>"
+                                   value="<%= formData.ataMemberNumber || '' %>"
+                                   placeholder="e.g. 1212-48298"
+                                   maxlength="50">
+                            <div class="form-text">Found on your ATA membership card.</div>
+                            <% if (errors.ataMemberNumber) { %>
+                                <div class="invalid-feedback d-block"><%= errors.ataMemberNumber %></div>
+                            <% } %>
+                        </div>
+                        <div class="col-sm-7">
+                            <label for="rank" class="form-label fw-medium">Current Rank</label>
+                            <select id="rank" name="rank"
+                                    class="form-select <%= errors.rank ? 'is-invalid' : '' %>">
+                                <option value="">Select rank…</option>
+                                <% RANKS.forEach(r => { %>
+                                    <option value="<%= r %>" <%= formData.rank === r ? 'selected' : '' %>><%= r %></option>
+                                <% }) %>
+                            </select>
+                            <% if (errors.rank) { %>
+                                <div class="invalid-feedback"><%= errors.rank %></div>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <!-- ── School (School Owners only) ───────────────────────────── -->
+                    <div id="schoolSection" class="d-none">
+                        <hr class="my-4">
+                        <p class="fw-semibold text-muted small text-uppercase mb-3">
+                            <i class="bi bi-building me-1"></i>Your School
+                        </p>
+                        <div class="mb-4">
+                            <label for="schoolName" class="form-label fw-medium">School Name</label>
+                            <input type="text" id="schoolName" name="schoolName"
+                                   class="form-control <%= errors.schoolName ? 'is-invalid' : '' %>"
+                                   value="<%= formData.schoolName || '' %>"
+                                   placeholder="e.g. Coastal ATA Martial Arts"
+                                   maxlength="255">
+                            <div class="form-text">
+                                Your school profile will be created automatically.
+                                You can update all details from your dashboard.
+                            </div>
+                            <% if (errors.schoolName) { %>
+                                <div class="invalid-feedback d-block"><%= errors.schoolName %></div>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- ── Password ──────────────────────────────────────────────── -->
+                    <p class="fw-semibold text-muted small text-uppercase mb-3">
+                        <i class="bi bi-lock me-1"></i>Password
+                    </p>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label fw-medium">
+                            Password <span class="text-danger">*</span>
+                        </label>
+                        <input type="password" id="password" name="password"
+                               class="form-control <%= errors.password ? 'is-invalid' : '' %>"
+                               autocomplete="new-password"
+                               placeholder="Minimum 8 characters" required>
+                        <% if (errors.password) { %>
+                            <div class="invalid-feedback"><%= errors.password %></div>
+                        <% } %>
+                        <div class="form-text">
+                            At least 8 characters, one uppercase letter, and one number.
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="confirmPassword" class="form-label fw-medium">
+                            Confirm Password <span class="text-danger">*</span>
+                        </label>
+                        <input type="password" id="confirmPassword" name="confirmPassword"
+                               class="form-control <%= errors.confirmPassword ? 'is-invalid' : '' %>"
+                               autocomplete="new-password"
+                               placeholder="Re-enter your password" required>
+                        <% if (errors.confirmPassword) { %>
+                            <div class="invalid-feedback"><%= errors.confirmPassword %></div>
+                        <% } %>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-danger btn-lg fw-semibold">
+                            Create Account
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+
+        <p class="text-center text-muted small mt-3">
+            Already have an account?
+            <a href="/login" class="text-decoration-none fw-medium">Sign in</a>
+        </p>
+
+    </div>
+</div>
+
+<script>
+// Show the school name section only when "School Owner" is selected
+const roleSelect   = document.getElementById('roleId');
+const schoolSection = document.getElementById('schoolSection');
+
+function toggleSchoolSection() {
+    const isOwner = roleSelect.value === '2';
+    schoolSection.classList.toggle('d-none', !isOwner);
+}
+
+roleSelect.addEventListener('change', toggleSchoolSection);
+
+// Run on page load in case the form is re-rendered with a selected value
+toggleSchoolSection();
+</script>

@@ -1,0 +1,209 @@
+<%
+    // ── Calendar maths ────────────────────────────────────────────────────────
+    const MONTH_NAMES = ['January','February','March','April','May','June',
+                         'July','August','September','October','November','December'];
+    const DAY_NAMES   = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+    const firstDay    = new Date(year, month - 1, 1);
+    const lastDay     = new Date(year, month, 0);
+    const daysInMonth = lastDay.getDate();
+
+    // Monday-first offset: getDay() returns 0=Sun … 6=Sat
+    let startOffset = firstDay.getDay();
+    startOffset = startOffset === 0 ? 6 : startOffset - 1;
+
+    // Prev / Next month links
+    const prevMonth = month === 1  ? { year: year - 1, month: 12 } : { year, month: month - 1 };
+    const nextMonth = month === 12 ? { year: year + 1, month:  1 } : { year, month: month + 1 };
+
+    // Helper: YYYY-MM-DD string for a given day number
+    const dateStr = (d) =>
+        `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+
+    // Helper: format TIME column ("HH:MM:SS" → "9:00 AM")
+    const fmtTime = (t) => {
+        if (!t) return '';
+        const [h, m] = String(t).split(':');
+        const hour = parseInt(h, 10);
+        return `${hour % 12 || 12}:${m} ${hour < 12 ? 'AM' : 'PM'}`;
+    };
+%>
+
+<!-- Header -->
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="h4 fw-bold mb-1">Availability Calendar</h2>
+        <p class="text-muted small mb-0">
+            Click days to select them, then choose an action below.
+            Your current travel radius:
+            <% if (profile.travel_radius_miles) { %>
+                <strong><%= profile.travel_radius_miles %> miles</strong>.
+            <% } else { %>
+                <a href="/profile/instructor" class="text-decoration-none">Not set — add it to your profile</a>.
+            <% } %>
+        </p>
+    </div>
+    <a href="/profile/instructor" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-pencil me-1"></i>Edit Profile
+    </a>
+</div>
+
+<!-- Calendar card -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom py-3">
+
+        <!-- Month navigation -->
+        <div class="d-flex align-items-center justify-content-between">
+            <a href="/availability?year=<%= prevMonth.year %>&month=<%= prevMonth.month %>"
+               class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+            <h5 class="mb-0 fw-bold">
+                <%= MONTH_NAMES[month - 1] %> <%= year %>
+            </h5>
+            <a href="/availability?year=<%= nextMonth.year %>&month=<%= nextMonth.month %>"
+               class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </div>
+
+    </div>
+    <div class="card-body p-3 p-md-4">
+
+        <!-- Day-of-week header -->
+        <div class="row row-cols-7 g-1 text-center mb-2">
+            <% DAY_NAMES.forEach(d => { %>
+                <div class="col">
+                    <small class="text-muted fw-semibold text-uppercase" style="font-size:.7rem;"><%= d %></small>
+                </div>
+            <% }) %>
+        </div>
+
+        <!-- Calendar grid -->
+        <div class="row row-cols-7 g-1" id="calendarGrid">
+
+            <!-- Empty offset cells before the first of the month -->
+            <% for (let i = 0; i < startOffset; i++) { %>
+                <div class="col"><div style="min-height:60px;"></div></div>
+            <% } %>
+
+            <!-- Day cells -->
+            <% for (let day = 1; day <= daysInMonth; day++) {
+                const ds      = dateStr(day);
+                const entry   = availabilityMap[ds];
+                const isPast  = ds < today;
+                const isToday = ds === today;
+
+                let cellCls = 'cal-day';
+                let statusHtml = '';
+
+                if (entry) {
+                    if (entry.is_available) {
+                        cellCls += ' cal-available';
+                        const timeRange = entry.start_time
+                            ? `<br><span style="font-size:.6rem;">${fmtTime(entry.start_time)}${entry.end_time ? ' – ' + fmtTime(entry.end_time) : ''}</span>`
+                            : '';
+                        statusHtml = `<span class="badge bg-success fw-normal mt-1" style="font-size:.6rem;">Available${timeRange}</span>`;
+                    } else {
+                        cellCls += ' cal-blocked';
+                        statusHtml = `<span class="badge bg-danger fw-normal mt-1" style="font-size:.6rem;">Blocked</span>`;
+                    }
+                } else {
+                    cellCls += ' cal-default';
+                }
+
+                if (isPast)  cellCls += ' cal-past';
+                if (isToday) cellCls += ' cal-today';
+            %>
+                <div class="col">
+                    <div class="<%= cellCls %>" data-date="<%= ds %>">
+                        <div class="cal-day-number"><%= day %></div>
+                        <%- statusHtml %>
+                    </div>
+                </div>
+            <% } %>
+
+        </div>
+
+        <!-- Legend -->
+        <div class="d-flex flex-wrap gap-3 mt-3 pt-3 border-top small text-muted">
+            <span><span class="badge bg-success fw-normal me-1">Available</span> Explicitly marked available</span>
+            <span><span class="badge bg-danger fw-normal me-1">Blocked</span> Explicitly blocked</span>
+            <span>
+                <span class="badge border text-secondary fw-normal me-1" style="background:transparent;">No entry</span>
+                Uses profile default
+                (<% if (profile.is_available_for_events) { %>
+                    <strong class="text-success">available</strong>
+                <% } else { %>
+                    <strong class="text-danger">unavailable</strong>
+                <% } %>)
+            </span>
+        </div>
+
+    </div>
+</div>
+
+<!-- Bulk date-range setter -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-bottom fw-semibold py-3">
+        <i class="bi bi-calendar-range text-danger me-2"></i>Bulk Set — Date Range
+    </div>
+    <div class="card-body p-4">
+        <p class="small text-muted mb-3">
+            Set all dates within a range to Available or Blocked without clicking each day individually.
+        </p>
+        <form id="bulkRangeForm">
+            <div class="row g-3 align-items-end">
+                <div class="col-sm-3">
+                    <label for="rangeFrom" class="form-label fw-medium">From</label>
+                    <input type="date" id="rangeFrom" class="form-control"
+                           min="<%= today %>">
+                </div>
+                <div class="col-sm-3">
+                    <label for="rangeTo" class="form-label fw-medium">To</label>
+                    <input type="date" id="rangeTo" class="form-control"
+                           min="<%= today %>">
+                </div>
+                <div class="col-sm-3">
+                    <label class="form-label fw-medium">Status</label>
+                    <select id="rangeStatus" class="form-select">
+                        <option value="available">Available</option>
+                        <option value="blocked">Blocked</option>
+                        <option value="clear">Clear (reset to default)</option>
+                    </select>
+                </div>
+                <div class="col-sm-3">
+                    <button type="submit" class="btn btn-danger w-100">Apply Range</button>
+                </div>
+            </div>
+            <div id="rangeError" class="text-danger small mt-2 d-none"></div>
+            <div id="rangeSuccess" class="text-success small mt-2 d-none"></div>
+        </form>
+    </div>
+</div>
+
+<!-- Floating action bar (appears when days are selected) -->
+<div id="actionBar"
+     class="d-none position-fixed bottom-0 start-0 end-0 py-3 bg-dark shadow-lg"
+     style="z-index:1050; border-top:2px solid #dc3545;">
+    <div class="container d-flex align-items-center gap-3 flex-wrap">
+        <span class="text-white fw-semibold">
+            <span id="selectedCount">0</span> day<span id="pluralS">s</span> selected
+        </span>
+        <button id="setAvailableBtn" class="btn btn-success btn-sm px-3">
+            <i class="bi bi-check-lg me-1"></i>Set Available
+        </button>
+        <button id="setBlockedBtn" class="btn btn-danger btn-sm px-3">
+            <i class="bi bi-x-lg me-1"></i>Block Date(s)
+        </button>
+        <button id="clearSelectionBtn" class="btn btn-outline-warning btn-sm px-3">
+            <i class="bi bi-eraser me-1"></i>Clear to Default
+        </button>
+        <button id="cancelBtn" class="btn btn-link text-white btn-sm ms-auto text-decoration-none">
+            Cancel
+        </button>
+    </div>
+</div>
+
+<!-- Bottom spacing so the action bar doesn't cover content -->
+<div style="height:80px;"></div>

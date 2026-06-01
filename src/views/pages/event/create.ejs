@@ -1,0 +1,264 @@
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="h4 fw-bold mb-1">Create Event</h2>
+        <p class="text-muted small mb-0">
+            Posting for <strong><%= school.name %></strong>
+        </p>
+    </div>
+    <a href="/schools/mine/<%= school.id %>/manage" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Management
+    </a>
+</div>
+
+<!-- School selector — shown when owner has multiple schools -->
+<% if (ownedSchools && ownedSchools.length > 1) { %>
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4 d-flex align-items-center gap-3 flex-wrap">
+            <span class="fw-medium text-nowrap">Posting for:</span>
+            <% ownedSchools.forEach(s => { %>
+                <a href="/events/create?school=<%= s.id %>"
+                   class="btn btn-sm <%= s.id === school.id ? 'btn-dark' : 'btn-outline-secondary' %>">
+                    <%= s.name %>
+                </a>
+            <% }) %>
+        </div>
+    </div>
+<% } %>
+
+<form action="/events" method="POST" novalidate>
+    <!-- Pass which school this event belongs to -->
+    <input type="hidden" name="schoolId" value="<%= school.id %>">
+
+    <!-- ── Event Details ──────────────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom fw-semibold py-3">
+            <i class="bi bi-info-circle text-danger me-2"></i>Event Details
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+
+                <div class="col-sm-8">
+                    <label for="title" class="form-label fw-medium">Event Title <span class="text-danger">*</span></label>
+                    <input type="text" id="title" name="title"
+                           class="form-control <%= errors.title ? 'is-invalid' : '' %>"
+                           value="<%= formData.title || '' %>"
+                           required maxlength="255"
+                           placeholder="e.g. 2026 Summer Belt Testing">
+                    <% if (errors.title) { %><div class="invalid-feedback"><%= errors.title %></div><% } %>
+                </div>
+
+                <div class="col-sm-4">
+                    <label for="eventType" class="form-label fw-medium">Event Type <span class="text-danger">*</span></label>
+                    <select id="eventType" name="eventType"
+                            class="form-select <%= errors.eventType ? 'is-invalid' : '' %>" required>
+                        <option value="">Select type…</option>
+                        <% EVENT_TYPES.forEach(t => { %>
+                            <option value="<%= t.value %>" <%= formData.eventType === t.value ? 'selected' : '' %>>
+                                <%= t.label %>
+                            </option>
+                        <% }) %>
+                    </select>
+                    <% if (errors.eventType) { %><div class="invalid-feedback"><%= errors.eventType %></div><% } %>
+                </div>
+
+                <div class="col-12">
+                    <label for="description" class="form-label fw-medium">Description</label>
+                    <textarea id="description" name="description" rows="4"
+                              class="form-control <%= errors.description ? 'is-invalid' : '' %>"
+                              maxlength="2000"
+                              placeholder="Describe the event — who can attend, what to expect, any special requirements…"><%= formData.description || '' %></textarea>
+                    <% if (errors.description) { %><div class="invalid-feedback"><%= errors.description %></div><% } %>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Schedule ───────────────────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom fw-semibold py-3">
+            <i class="bi bi-clock text-danger me-2"></i>Schedule
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+
+                <div class="col-sm-4">
+                    <label for="startDatetime" class="form-label fw-medium">
+                        Start Date &amp; Time <span class="text-danger">*</span>
+                    </label>
+                    <input type="datetime-local" id="startDatetime" name="startDatetime"
+                           class="form-control <%= errors.startDatetime ? 'is-invalid' : '' %>"
+                           value="<%= formData.startDatetime || '' %>" required>
+                    <% if (errors.startDatetime) { %><div class="invalid-feedback"><%= errors.startDatetime %></div><% } %>
+                </div>
+
+                <div class="col-sm-4">
+                    <label for="endDatetime" class="form-label fw-medium">
+                        End Date &amp; Time <span class="text-danger">*</span>
+                    </label>
+                    <input type="datetime-local" id="endDatetime" name="endDatetime"
+                           class="form-control <%= errors.endDatetime ? 'is-invalid' : '' %>"
+                           value="<%= formData.endDatetime || '' %>" required>
+                    <% if (errors.endDatetime) { %><div class="invalid-feedback"><%= errors.endDatetime %></div><% } %>
+                </div>
+
+                <div class="col-sm-4">
+                    <label for="registrationDeadline" class="form-label fw-medium">Registration Deadline</label>
+                    <input type="date" id="registrationDeadline" name="registrationDeadline"
+                           class="form-control <%= errors.registrationDeadline ? 'is-invalid' : '' %>"
+                           value="<%= formData.registrationDeadline || '' %>">
+                    <% if (errors.registrationDeadline) { %><div class="invalid-feedback"><%= errors.registrationDeadline %></div><% } %>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Location ───────────────────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom fw-semibold py-3">
+            <i class="bi bi-geo-alt text-danger me-2"></i>Location
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+
+                <div class="col-sm-6">
+                    <label for="locationName" class="form-label fw-medium">Venue Name</label>
+                    <input type="text" id="locationName" name="locationName"
+                           class="form-control"
+                           value="<%= formData.locationName || (school && school.name) || '' %>"
+                           placeholder="e.g. <%= school && school.name %>">
+                </div>
+
+                <div class="col-sm-6">
+                    <label for="address" class="form-label fw-medium">Street Address</label>
+                    <input type="text" id="address" name="address"
+                           class="form-control"
+                           value="<%= formData.address || (school && school.address) || '' %>"
+                           placeholder="<%= school && school.address || '1030 Brooksbank Ave' %>">
+                </div>
+
+                <div class="col-sm-4">
+                    <label for="city" class="form-label fw-medium">City</label>
+                    <input type="text" id="city" name="city"
+                           class="form-control"
+                           value="<%= formData.city || (school && school.city) || '' %>"
+                           placeholder="<%= school && school.city || 'North Vancouver' %>">
+                </div>
+
+                <div class="col-sm-3">
+                    <label for="state" class="form-label fw-medium">Province / State</label>
+                    <input type="text" id="state" name="state"
+                           class="form-control"
+                           value="<%= formData.state || (school && school.state) || '' %>"
+                           placeholder="<%= school && school.state || 'BC' %>">
+                </div>
+
+                <div class="col-sm-2">
+                    <label for="postalCode" class="form-label fw-medium">Postal Code</label>
+                    <input type="text" id="postalCode" name="postalCode"
+                           class="form-control"
+                           value="<%= formData.postalCode || (school && school.postal_code) || '' %>">
+                </div>
+
+                <div class="col-sm-3">
+                    <label for="country" class="form-label fw-medium">Country</label>
+                    <input type="text" id="country" name="country"
+                           class="form-control"
+                           value="<%= formData.country || (school && school.country) || 'CA' %>">
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Judge Requirements ────────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom fw-semibold py-3">
+            <i class="bi bi-award text-danger me-2"></i>Judge Requirements
+            <span class="text-muted fw-normal small ms-2">— used to find and pre-fill judge requests</span>
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+
+                <div class="col-sm-4">
+                    <label for="judgesNeeded" class="form-label fw-medium">Judges Needed</label>
+                    <input type="number" id="judgesNeeded" name="judgesNeeded"
+                           class="form-control"
+                           value="<%= formData.judgesNeeded || '' %>"
+                           min="1" max="20" placeholder="e.g. 3">
+                    <div class="form-text">Total number of judges required.</div>
+                </div>
+
+                <div class="col-sm-8">
+                    <label for="requiredJudgeRank" class="form-label fw-medium">Minimum Judge Rank</label>
+                    <select id="requiredJudgeRank" name="requiredJudgeRank" class="form-select">
+                        <option value="">No minimum requirement</option>
+                        <% RANKS.forEach(r => { %>
+                            <option value="<%= r %>"
+                                    <%= (formData.requiredJudgeRank === r) ? 'selected' : '' %>>
+                                <%= r %>
+                            </option>
+                        <% }) %>
+                    </select>
+                    <div class="form-text">Minimum ATA rank judges must hold.</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Settings ───────────────────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom fw-semibold py-3">
+            <i class="bi bi-gear text-danger me-2"></i>Settings
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3 align-items-start">
+
+                <div class="col-sm-4">
+                    <label for="maxParticipants" class="form-label fw-medium">Max Participants</label>
+                    <input type="number" id="maxParticipants" name="maxParticipants"
+                           class="form-control <%= errors.maxParticipants ? 'is-invalid' : '' %>"
+                           value="<%= formData.maxParticipants || '' %>"
+                           min="1" max="9999" placeholder="Leave blank for unlimited">
+                    <% if (errors.maxParticipants) { %><div class="invalid-feedback"><%= errors.maxParticipants %></div><% } %>
+                </div>
+
+                <div class="col-sm-4">
+                    <label for="status" class="form-label fw-medium">Publish Status</label>
+                    <select id="status" name="status" class="form-select">
+                        <% EVENT_STATUSES.filter(s => ['draft','published'].includes(s.value)).forEach(s => { %>
+                            <option value="<%= s.value %>" <%= (formData.status || 'draft') === s.value ? 'selected' : '' %>><%= s.label %></option>
+                        <% }) %>
+                    </select>
+                    <div class="form-text">Draft events are not visible to the public.</div>
+                </div>
+
+                <div class="col-sm-4 pt-sm-4 mt-sm-2">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch"
+                               id="isPublic" name="isPublic"
+                               <%= (formData.isPublic !== 'off') ? 'checked' : '' %>>
+                        <label class="form-check-label fw-medium" for="isPublic">
+                            Public Event
+                        </label>
+                    </div>
+                    <div class="form-text">Show in the public events calendar.</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mb-2">
+        <a href="/schools/mine/<%= school.id %>/manage" class="btn btn-outline-secondary px-4">Cancel</a>
+        <button type="submit" name="status" value="draft" class="btn btn-outline-danger px-4">
+            Save as Draft
+        </button>
+        <button type="submit" name="status" value="published" class="btn btn-danger px-4 fw-semibold">
+            <i class="bi bi-check-lg me-1"></i>Publish Event
+        </button>
+    </div>
+
+</form>

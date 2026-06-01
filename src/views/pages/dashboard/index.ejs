@@ -1,0 +1,315 @@
+<%
+    // Privilege levels: INSTRUCTOR=1, SCHOOL_OWNER=2, ADMINISTRATOR=3
+    const Roles = { INSTRUCTOR: 1, SCHOOL_OWNER: 2, ADMINISTRATOR: 3 };
+    const isAdmin       = user.roleId >= Roles.ADMINISTRATOR;
+    const isSchoolOwner = user.roleId === Roles.SCHOOL_OWNER;
+    const isInstructor  = user.roleId === Roles.INSTRUCTOR;
+%>
+
+<!-- Page header -->
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="h4 fw-bold mb-1">Welcome back, <%= user.displayName.split(' ')[0] %>!</h2>
+        <p class="text-muted mb-0">
+            <span class="badge bg-dark"><%= user.roleLabel %></span>
+            <span class="ms-2 small"><%= user.displayName %></span>
+        </p>
+    </div>
+    <% if (isSchoolOwner) { %>
+        <a href="/events/create" class="btn btn-danger">
+            <i class="bi bi-plus-lg me-1"></i>Post Event
+        </a>
+    <% } else if (isInstructor) { %>
+        <a href="/availability" class="btn btn-danger">
+            <i class="bi bi-calendar-check me-1"></i>Manage Availability
+        </a>
+    <% } else if (isAdmin) { %>
+        <a href="/admin" class="btn btn-danger">
+            <i class="bi bi-shield-lock me-1"></i>Admin Panel
+        </a>
+    <% } %>
+</div>
+
+<!-- ── Instructor Dashboard ────────────────────────────────────────────────── -->
+<% if (isInstructor) { %>
+
+    <div class="row g-4 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="bg-danger bg-opacity-10 rounded p-3">
+                        <i class="bi bi-envelope-fill text-danger fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold">—</div>
+                        <div class="text-muted small">Pending Requests</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="bg-success bg-opacity-10 rounded p-3">
+                        <i class="bi bi-check-circle-fill text-success fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold">—</div>
+                        <div class="text-muted small">Accepted Bookings</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="bg-primary bg-opacity-10 rounded p-3">
+                        <i class="bi bi-calendar2-week-fill text-primary fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold">—</div>
+                        <div class="text-muted small">Available Days (30d)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="bg-warning bg-opacity-10 rounded p-3">
+                        <i class="bi bi-chat-fill text-warning fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold">—</div>
+                        <div class="text-muted small">Unread Messages</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom fw-semibold">
+                    <i class="bi bi-envelope me-2 text-danger"></i>Judge Requests
+                </div>
+                <div class="card-body text-center text-muted py-5">
+                    <i class="bi bi-inbox fs-1 d-block mb-2 opacity-25"></i>
+                    <small>No pending requests</small>
+                </div>
+                <div class="card-footer bg-white border-top">
+                    <a href="/bookings" class="btn btn-sm btn-outline-secondary">View all requests</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom fw-semibold">
+                    <i class="bi bi-person-circle me-2 text-danger"></i>Profile Status
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                            <span class="small">Profile visibility</span>
+                            <span class="badge bg-success">Public</span>
+                        </div>
+                        <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                            <span class="small">ATA Certification</span>
+                            <span class="badge bg-warning text-dark">Unverified</span>
+                        </div>
+                        <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                            <span class="small">Available for events</span>
+                            <span class="badge bg-success">Yes</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-top">
+                    <a href="/profile/instructor" class="btn btn-sm btn-outline-danger">Edit Profile</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- ── School Owner Dashboard ─────────────────────────────────────────────── -->
+<% } else if (isSchoolOwner) { %>
+
+    <div class="row g-4 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="bg-danger bg-opacity-10 rounded p-3">
+                        <i class="bi bi-calendar-event-fill text-danger fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold">—</div>
+                        <div class="text-muted small">Upcoming Events</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="bg-primary bg-opacity-10 rounded p-3">
+                        <i class="bi bi-people-fill text-primary fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold">—</div>
+                        <div class="text-muted small">Roster Instructors</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="bg-warning bg-opacity-10 rounded p-3">
+                        <i class="bi bi-hourglass-split text-warning fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold">—</div>
+                        <div class="text-muted small">Pending Judge Requests</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="bg-success bg-opacity-10 rounded p-3">
+                        <i class="bi bi-chat-dots-fill text-success fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold">—</div>
+                        <div class="text-muted small">Unread Messages</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom fw-semibold">
+                    <i class="bi bi-calendar3 me-2 text-danger"></i>Upcoming Events
+                </div>
+                <div class="card-body text-center text-muted py-5">
+                    <i class="bi bi-calendar-x fs-1 d-block mb-2 opacity-25"></i>
+                    <small>No events posted yet</small>
+                </div>
+                <div class="card-footer bg-white border-top d-flex gap-2">
+                    <a href="/events/create" class="btn btn-sm btn-danger">Post an Event</a>
+                    <a href="/events" class="btn btn-sm btn-outline-secondary">Browse Events</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom fw-semibold">
+                    <i class="bi bi-building me-2 text-danger"></i>School Profile
+                </div>
+                <div class="card-body text-center text-muted py-5">
+                    <i class="bi bi-pencil-square fs-1 d-block mb-2 opacity-25"></i>
+                    <small>Complete your school profile</small>
+                </div>
+                <div class="card-footer bg-white border-top">
+                    <a href="/profile/school" class="btn btn-sm btn-outline-danger">Edit School Profile</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!-- ── Administrator Dashboard ────────────────────────────────────────────── -->
+<% } else if (isAdmin) { %>
+
+    <div class="row g-4 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="bg-danger bg-opacity-10 rounded p-3">
+                        <i class="bi bi-people-fill text-danger fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold">—</div>
+                        <div class="text-muted small">Total Users</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="bg-warning bg-opacity-10 rounded p-3">
+                        <i class="bi bi-patch-check-fill text-warning fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold">—</div>
+                        <div class="text-muted small">Pending Verifications</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="bg-primary bg-opacity-10 rounded p-3">
+                        <i class="bi bi-calendar-event-fill text-primary fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold">—</div>
+                        <div class="text-muted small">Active Events</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="bg-success bg-opacity-10 rounded p-3">
+                        <i class="bi bi-building-fill text-success fs-4"></i>
+                    </div>
+                    <div>
+                        <div class="fs-4 fw-bold">—</div>
+                        <div class="text-muted small">Registered Schools</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-people fs-1 text-danger mb-3 d-block"></i>
+                    <h6 class="fw-semibold">User Management</h6>
+                    <p class="text-muted small">View, activate, and deactivate user accounts.</p>
+                    <a href="/admin/users" class="btn btn-outline-danger btn-sm">Manage Users</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-patch-check fs-1 text-danger mb-3 d-block"></i>
+                    <h6 class="fw-semibold">Credential Verification</h6>
+                    <p class="text-muted small">Review and verify instructor ATA certifications.</p>
+                    <a href="/admin/certifications" class="btn btn-outline-danger btn-sm">Review Certs</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-bar-chart-line fs-1 text-danger mb-3 d-block"></i>
+                    <h6 class="fw-semibold">Platform Reports</h6>
+                    <p class="text-muted small">View activity, growth, and usage statistics.</p>
+                    <a href="/admin/reports" class="btn btn-outline-danger btn-sm">View Reports</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<% } %>

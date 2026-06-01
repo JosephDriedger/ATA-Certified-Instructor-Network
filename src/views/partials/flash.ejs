@@ -1,0 +1,19 @@
+<% if (flash) { %>
+    <%
+        // Map flash type to Bootstrap alert variant.
+        // 'error' → 'danger'  (Bootstrap doesn't have an 'error' class)
+        const alertClass = flash.type === 'error' ? 'danger' : flash.type;
+        const iconMap = {
+            success: 'bi-check-circle-fill',
+            danger:  'bi-exclamation-triangle-fill',
+            warning: 'bi-exclamation-circle-fill',
+            info:    'bi-info-circle-fill'
+        };
+        const icon = iconMap[alertClass] || 'bi-info-circle-fill';
+    %>
+    <div class="alert alert-<%= alertClass %> alert-dismissible d-flex align-items-center gap-2 fade show mb-4" role="alert">
+        <i class="bi <%= icon %> flex-shrink-0"></i>
+        <span><%= flash.message %></span>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<% } %>

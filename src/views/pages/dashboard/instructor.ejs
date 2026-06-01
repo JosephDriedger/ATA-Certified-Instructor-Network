@@ -1,0 +1,404 @@
+<%
+    const fmtDate = (d) => d
+        ? new Date(d).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' })
+        : '—';
+
+    const fmtTime = (t) => {
+        if (!t) return '';
+        const [h, m] = String(t).split(':');
+        const hour = parseInt(h, 10);
+        return `${hour % 12 || 12}:${m} ${hour < 12 ? 'AM' : 'PM'}`;
+    };
+
+    const fmtRelative = (d) => {
+        if (!d) return '';
+        const diff = Date.now() - new Date(d).getTime();
+        if (diff < 3600000)   return `${Math.floor(diff / 60000)}m ago`;
+        if (diff < 86400000)  return `${Math.floor(diff / 3600000)}h ago`;
+        if (diff < 604800000) return `${Math.floor(diff / 86400000)}d ago`;
+        return fmtDate(d);
+    };
+
+    const NOTIF_ICON = {
+        judge_request_received:  { icon: 'bi-envelope-fill',      cls: 'text-primary'   },
+        judge_request_accepted:  { icon: 'bi-check-circle-fill',   cls: 'text-success'   },
+        judge_request_declined:  { icon: 'bi-x-circle-fill',       cls: 'text-danger'    },
+        judge_request_cancelled: { icon: 'bi-slash-circle-fill',   cls: 'text-warning'   },
+        new_message:             { icon: 'bi-chat-fill',            cls: 'text-info'      }
+    };
+
+    const notifHref = (type, id) => {
+        if (!id) return '#';
+        const map = {
+            judge_request: `/bookings/${id}`,
+            message:       `/messages/${id}`,
+            event:         `/events/${id}`
+        };
+        return map[type] || '#';
+    };
+%>
+
+<!-- Header -->
+<div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="h4 fw-bold mb-1">Welcome back, <%= user.displayName.split(' ')[0] %>!</h2>
+        <p class="text-muted small mb-0">
+            <span class="badge bg-success">Instructor</span>
+            <span class="ms-2"><%= user.displayName %></span>
+            <% if (profile && profile.rank) { %>
+                · <span class="text-muted"><%= profile.rank %></span>
+            <% } %>
+        </p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="/availability" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-calendar-check me-1"></i>Availability
+        </a>
+        <a href="/profile/instructor" class="btn btn-danger btn-sm">
+            <i class="bi bi-pencil me-1"></i>Edit Profile
+        </a>
+    </div>
+</div>
+
+<!-- ── No profile state ────────────────────────────────────────────────────── -->
+<% if (!profile) { %>
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5 px-4">
+            <i class="bi bi-person-badge text-muted fs-1 d-block mb-3 opacity-25"></i>
+            <h5 class="fw-bold mb-2">Complete Your Instructor Profile</h5>
+            <p class="text-muted mb-4 mx-auto" style="max-width:420px;">
+                Add your rank, specialties, and availability so schools and event organizers
+                can find and book you as a guest judge.
+            </p>
+            <a href="/profile/instructor" class="btn btn-danger px-4 fw-semibold">
+                Set Up Profile
+            </a>
+        </div>
+    </div>
+<% } else { %>
+
+<!-- ── Stat cards ─────────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3 p-3">
+                <div class="bg-success bg-opacity-10 rounded-3 p-3 flex-shrink-0">
+                    <i class="bi bi-calendar-check-fill text-success fs-4"></i>
+                </div>
+                <div>
+                    <div class="fs-3 fw-bold lh-1 mb-1"><%= stats.upcoming %></div>
+                    <div class="text-muted small">Upcoming Jobs</div>
+                </div>
+            </div>
+            <a href="/bookings?status=accepted" class="card-footer bg-white border-top text-decoration-none text-muted small py-2 px-3">
+                View schedule <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3 p-3">
+                <div class="bg-warning bg-opacity-10 rounded-3 p-3 flex-shrink-0">
+                    <i class="bi bi-envelope-fill text-warning fs-4"></i>
+                </div>
+                <div>
+                    <div class="fs-3 fw-bold lh-1 mb-1"><%= stats.pending %></div>
+                    <div class="text-muted small">Pending Requests</div>
+                </div>
+            </div>
+            <a href="/bookings?status=pending" class="card-footer bg-white border-top text-decoration-none text-muted small py-2 px-3">
+                Review requests <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3 p-3">
+                <div class="bg-primary bg-opacity-10 rounded-3 p-3 flex-shrink-0">
+                    <i class="bi bi-calendar2-week-fill text-primary fs-4"></i>
+                </div>
+                <div>
+                    <div class="fs-3 fw-bold lh-1 mb-1"><%= stats.availableDays %></div>
+                    <div class="text-muted small">Available Days (30d)</div>
+                    <% if (stats.blockedDays > 0) { %>
+                        <div class="text-danger" style="font-size:.7rem;"><%= stats.blockedDays %> blocked</div>
+                    <% } %>
+                </div>
+            </div>
+            <a href="/availability" class="card-footer bg-white border-top text-decoration-none text-muted small py-2 px-3">
+                Manage calendar <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3 p-3">
+                <div class="bg-danger bg-opacity-10 rounded-3 p-3 flex-shrink-0">
+                    <i class="bi bi-chat-dots-fill text-danger fs-4"></i>
+                </div>
+                <div>
+                    <div class="fs-3 fw-bold lh-1 mb-1"><%= stats.unreadMessages %></div>
+                    <div class="text-muted small">Unread Messages</div>
+                </div>
+            </div>
+            <a href="/messages" class="card-footer bg-white border-top text-decoration-none text-muted small py-2 px-3">
+                Open inbox <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Upcoming assignments + Pending requests ─────────────────────────────── -->
+<div class="row g-4 mb-4">
+
+    <!-- Upcoming confirmed assignments -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom fw-semibold py-3 d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-calendar-check text-success me-2"></i>Upcoming Assignments</span>
+                <a href="/bookings?status=accepted" class="btn btn-sm btn-outline-secondary">All</a>
+            </div>
+            <% if (upcomingAssignments.length === 0) { %>
+                <div class="card-body text-center text-muted py-5">
+                    <i class="bi bi-calendar-x fs-2 d-block mb-2 opacity-25"></i>
+                    <p class="mb-2">No upcoming confirmed assignments.</p>
+                    <a href="/instructors" class="btn btn-sm btn-outline-secondary">
+                        Update your profile to get found
+                    </a>
+                </div>
+            <% } else { %>
+                <ul class="list-group list-group-flush">
+                    <% upcomingAssignments.forEach(a => { %>
+                        <li class="list-group-item px-4 py-3">
+                            <div class="d-flex align-items-start gap-3">
+                                <!-- Date block -->
+                                <div class="text-center flex-shrink-0 bg-success bg-opacity-10 rounded-3 p-2" style="min-width:52px;">
+                                    <div class="fw-bold text-success lh-1" style="font-size:1.2rem;">
+                                        <%= new Date(a.requested_date).getDate() %>
+                                    </div>
+                                    <div class="text-uppercase text-muted lh-1" style="font-size:.6rem;">
+                                        <%= new Date(a.requested_date).toLocaleString('en-US', { month:'short' }) %>
+                                    </div>
+                                </div>
+                                <!-- Details -->
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold small">
+                                        <%= a.event_title || (a.school_name ? `${a.school_name} Event` : 'Guest Judge Assignment') %>
+                                    </div>
+                                    <div class="text-muted" style="font-size:.72rem;">
+                                        <% if (a.school_name) { %>
+                                            <i class="bi bi-building me-1"></i><%= a.school_name %>
+                                        <% } %>
+                                        <% if (a.requested_time) { %>
+                                            · <i class="bi bi-clock me-1"></i><%= fmtTime(a.requested_time) %>
+                                        <% } %>
+                                        <% if (a.location_name) { %>
+                                            · <i class="bi bi-geo-alt me-1"></i><%= a.location_name %>
+                                        <% } %>
+                                    </div>
+                                </div>
+                                <a href="/bookings/<%= a.id %>" class="btn btn-sm btn-outline-success flex-shrink-0">
+                                    Details
+                                </a>
+                            </div>
+                        </li>
+                    <% }) %>
+                </ul>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Pending requests with quick actions -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom fw-semibold py-3 d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="bi bi-envelope text-warning me-2"></i>Pending Requests
+                    <% if (stats.pending > 0) { %>
+                        <span class="badge bg-warning text-dark ms-1"><%= stats.pending %></span>
+                    <% } %>
+                </span>
+                <a href="/bookings?status=pending" class="btn btn-sm btn-outline-secondary">All</a>
+            </div>
+            <% if (pendingRequests.length === 0) { %>
+                <div class="card-body text-center text-muted py-5">
+                    <i class="bi bi-inbox fs-2 d-block mb-2 opacity-25"></i>
+                    <p class="small mb-0">No pending requests — check back soon.</p>
+                </div>
+            <% } else { %>
+                <ul class="list-group list-group-flush">
+                    <% pendingRequests.forEach(req => { %>
+                        <li class="list-group-item px-4 py-3">
+                            <!-- School/requester info -->
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <% if (req.requester_photo) { %>
+                                    <img src="<%= req.requester_photo %>"
+                                         class="rounded-circle flex-shrink-0"
+                                         width="32" height="32"
+                                         style="object-fit:cover;">
+                                <% } else { %>
+                                    <div class="rounded-circle bg-secondary bg-opacity-15
+                                                d-flex align-items-center justify-content-center flex-shrink-0"
+                                         style="width:32px;height:32px;">
+                                        <i class="bi bi-building text-secondary" style="font-size:.7rem;"></i>
+                                    </div>
+                                <% } %>
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <div class="fw-semibold small text-truncate">
+                                        <%= req.school_name || `${req.requester_first} ${req.requester_last}` %>
+                                    </div>
+                                    <div class="text-muted" style="font-size:.7rem;">
+                                        <%= fmtDate(req.requested_date) %>
+                                        <% if (req.requested_time) { %> · <%= fmtTime(req.requested_time) %><% } %>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Quick actions -->
+                            <div class="d-flex gap-2">
+                                <form method="POST" action="/bookings/<%= req.id %>/accept" class="flex-fill">
+                                    <button type="submit" class="btn btn-success btn-sm w-100">
+                                        <i class="bi bi-check-lg me-1"></i>Accept
+                                    </button>
+                                </form>
+                                <a href="/bookings/<%= req.id %>" class="btn btn-sm btn-outline-secondary flex-fill">
+                                    View
+                                </a>
+                            </div>
+                        </li>
+                    <% }) %>
+                </ul>
+            <% } %>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Profile completeness + Recent notifications ─────────────────────────── -->
+<div class="row g-4">
+
+    <!-- Profile completeness -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom fw-semibold py-3">
+                <i class="bi bi-person-circle text-danger me-2"></i>Profile Status
+            </div>
+            <div class="card-body p-4">
+                <!-- Completeness bar -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="small fw-medium">Profile Completeness</span>
+                        <span class="small fw-bold <%= profileCompleteness >= 80 ? 'text-success' : profileCompleteness >= 50 ? 'text-warning' : 'text-danger' %>">
+                            <%= profileCompleteness %>%
+                        </span>
+                    </div>
+                    <div class="progress" style="height:8px;">
+                        <div class="progress-bar <%= profileCompleteness >= 80 ? 'bg-success' : profileCompleteness >= 50 ? 'bg-warning' : 'bg-danger' %>"
+                             style="width:<%= profileCompleteness %>%;"></div>
+                    </div>
+                </div>
+
+                <!-- Check items -->
+                <ul class="list-unstyled mb-4">
+                    <% const profileItems = [
+                        { key:'photo',       label:'Profile photo',      href:'/profile/instructor' },
+                        { key:'bio',         label:'Biography',           href:'/profile/instructor' },
+                        { key:'rank',        label:'ATA rank set',        href:'/profile/instructor' },
+                        { key:'specialties', label:'Specialties selected',href:'/profile/instructor' },
+                        { key:'ata',         label:'ATA member number',   href:'/profile/instructor' },
+                        { key:'public',      label:'Profile is public',   href:'/profile/instructor' }
+                    ]; %>
+                    <% profileItems.forEach(item => { %>
+                        <li class="d-flex align-items-center gap-2 mb-2">
+                            <% if (profileChecks[item.key]) { %>
+                                <i class="bi bi-check-circle-fill text-success flex-shrink-0"></i>
+                                <span class="small"><%= item.label %></span>
+                            <% } else { %>
+                                <i class="bi bi-circle text-secondary opacity-50 flex-shrink-0"></i>
+                                <span class="small text-muted">
+                                    <a href="<%= item.href %>" class="text-decoration-none text-danger">
+                                        Add <%= item.label.toLowerCase() %>
+                                    </a>
+                                </span>
+                            <% } %>
+                        </li>
+                    <% }) %>
+                </ul>
+
+                <!-- Availability status -->
+                <div class="border-top pt-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small fw-medium">Default availability</span>
+                        <% if (profile.is_available_for_events) { %>
+                            <span class="badge bg-success fw-normal">Open for bookings</span>
+                        <% } else { %>
+                            <span class="badge bg-secondary fw-normal">Closed</span>
+                        <% } %>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="/profile/instructor" class="btn btn-sm btn-outline-danger flex-fill">Edit Profile</a>
+                        <a href="/availability"       class="btn btn-sm btn-outline-secondary flex-fill">Availability</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent notifications -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom fw-semibold py-3 d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="bi bi-bell text-danger me-2"></i>Recent Notifications
+                    <% if (stats.unreadNotifications > 0) { %>
+                        <span class="badge bg-danger ms-1"><%= stats.unreadNotifications %></span>
+                    <% } %>
+                </span>
+                <a href="/notifications" class="btn btn-sm btn-outline-secondary">All</a>
+            </div>
+            <% if (recentNotifications.length === 0) { %>
+                <div class="card-body text-center text-muted py-5">
+                    <i class="bi bi-bell-slash fs-2 d-block mb-2 opacity-25"></i>
+                    <small>No notifications yet.</small>
+                </div>
+            <% } else { %>
+                <ul class="list-group list-group-flush">
+                    <% recentNotifications.forEach(n => { %>
+                        <%
+                            const meta = NOTIF_ICON[n.type] || { icon:'bi-bell-fill', cls:'text-secondary' };
+                            const href = notifHref(n.reference_type, n.reference_id);
+                        %>
+                        <li class="list-group-item px-4 py-3 <%= !n.is_read ? 'bg-light' : '' %>">
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="flex-shrink-0 mt-1">
+                                    <i class="bi <%= meta.icon %> <%= meta.cls %> fs-5"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-<%= n.is_read ? 'normal' : 'semibold' %> small">
+                                        <%= n.title %>
+                                        <% if (!n.is_read) { %>
+                                            <span class="badge bg-danger ms-1 fw-normal" style="font-size:.55rem;">New</span>
+                                        <% } %>
+                                    </div>
+                                    <div class="text-muted" style="font-size:.7rem;"><%= fmtRelative(n.created_at) %></div>
+                                </div>
+                                <% if (href !== '#') { %>
+                                    <a href="<%= href %>" class="btn btn-sm btn-outline-secondary flex-shrink-0">
+                                        View
+                                    </a>
+                                <% } %>
+                            </div>
+                        </li>
+                    <% }) %>
+                </ul>
+            <% } %>
+        </div>
+    </div>
+
+</div>
+
+<% } %> <!-- end profile exists -->

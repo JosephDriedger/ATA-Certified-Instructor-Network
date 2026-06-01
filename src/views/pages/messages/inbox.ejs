@@ -1,0 +1,138 @@
+<%
+    const fmtRelative = (d) => {
+        if (!d) return '';
+        const diff = Date.now() - new Date(d).getTime();
+        if (diff < 60000)       return 'just now';
+        if (diff < 3600000)     return `${Math.floor(diff / 60000)}m ago`;
+        if (diff < 86400000)    return `${Math.floor(diff / 3600000)}h ago`;
+        if (diff < 604800000)   return `${Math.floor(diff / 86400000)}d ago`;
+        return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
+%>
+
+<!-- Header -->
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div>
+        <h2 class="h4 fw-bold mb-1">Messages</h2>
+        <p class="text-muted small mb-0">
+            <%= total %> conversation<%= total !== 1 ? 's' : '' %>
+        </p>
+    </div>
+    <a href="/messages/compose" class="btn btn-danger btn-sm">
+        <i class="bi bi-pencil-square me-1"></i>New Message
+    </a>
+</div>
+
+<% if (conversations.length === 0) { %>
+
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-chat-dots fs-1 d-block mb-3 opacity-25"></i>
+        <p class="mb-2">No messages yet.</p>
+        <a href="/instructors" class="btn btn-sm btn-danger">Browse Instructors</a>
+    </div>
+
+<% } else { %>
+
+    <div class="d-flex flex-column gap-2">
+        <% conversations.forEach(conv => { %>
+            <%
+                const hasUnread  = conv.unread_count > 0;
+                const isLastSelf = conv.last_sender_id === user.id;
+                const timeAgo    = fmtRelative(conv.last_message_time || conv.created_at);
+            %>
+            <a href="/messages/<%= conv.id %>"
+               class="text-decoration-none text-reset">
+                <div class="card border-0 shadow-sm <%= hasUnread ? 'border-start border-danger border-3' : '' %>
+                            hover-shadow transition">
+                    <div class="card-body py-3 px-4">
+                        <div class="d-flex align-items-center gap-3">
+
+                            <!-- Avatar -->
+                            <div class="flex-shrink-0 position-relative">
+                                <% if (conv.other_photo) { %>
+                                    <img src="<%= conv.other_photo %>"
+                                         alt="<%= conv.other_first_name %>"
+                                         class="rounded-circle"
+                                         width="48" height="48"
+                                         style="object-fit:cover;">
+                                <% } else { %>
+                                    <div class="rounded-circle bg-secondary bg-opacity-15
+                                                d-flex align-items-center justify-content-center"
+                                         style="width:48px;height:48px;">
+                                        <i class="bi bi-person-fill text-secondary fs-4"></i>
+                                    </div>
+                                <% } %>
+                                <% if (hasUnread) { %>
+                                    <span class="position-absolute bottom-0 end-0
+                                                 badge rounded-pill bg-danger p-1"
+                                          style="font-size:.55rem; min-width:16px;">
+                                        <%= conv.unread_count %>
+                                    </span>
+                                <% } %>
+                            </div>
+
+                            <!-- Content -->
+                            <div class="flex-grow-1 overflow-hidden">
+                                <div class="d-flex justify-content-between align-items-baseline gap-2 mb-1">
+                                    <span class="fw-<%= hasUnread ? 'bold' : 'semibold' %> text-truncate">
+                                        <%= conv.other_first_name %> <%= conv.other_last_name %>
+                                    </span>
+                                    <span class="text-muted flex-shrink-0"
+                                          style="font-size:.75rem; white-space:nowrap;">
+                                        <%= timeAgo %>
+                                    </span>
+                                </div>
+
+                                <% if (conv.subject) { %>
+                                    <div class="small fw-<%= hasUnread ? 'semibold' : 'normal' %>
+                                                text-truncate <%= hasUnread ? '' : 'text-muted' %>">
+                                        <% if (isLastSelf) { %>
+                                            <span class="text-secondary me-1">You:</span>
+                                        <% } %>
+                                        <%= conv.subject %>
+                                    </div>
+                                <% } %>
+
+                                <% if (conv.last_preview) { %>
+                                    <div class="small text-truncate mt-1
+                                                <%= hasUnread ? 'fw-semibold' : 'text-muted' %>">
+                                        <% if (isLastSelf && !conv.subject) { %>
+                                            <span class="text-secondary me-1">You:</span>
+                                        <% } %>
+                                        <%= conv.last_preview %>
+                                    </div>
+                                <% } %>
+                            </div>
+
+                            <!-- Chevron -->
+                            <div class="flex-shrink-0 text-muted">
+                                <i class="bi bi-chevron-right small"></i>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </a>
+        <% }) %>
+    </div>
+
+    <!-- Pagination -->
+    <% if (totalPages > 1) { %>
+        <nav class="mt-4" aria-label="Messages pages">
+            <ul class="pagination justify-content-center">
+                <li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
+                    <a class="page-link" href="?page=<%= page - 1 %>"><i class="bi bi-chevron-left"></i></a>
+                </li>
+                <% for (let p = 1; p <= totalPages; p++) { %>
+                    <li class="page-item <%= p === page ? 'active' : '' %>">
+                        <a class="page-link" href="?page=<%= p %>"><%= p %></a>
+                    </li>
+                <% } %>
+                <li class="page-item <%= page >= totalPages ? 'disabled' : '' %>">
+                    <a class="page-link" href="?page=<%= page + 1 %>"><i class="bi bi-chevron-right"></i></a>
+                </li>
+            </ul>
+        </nav>
+    <% } %>
+
+<% } %>

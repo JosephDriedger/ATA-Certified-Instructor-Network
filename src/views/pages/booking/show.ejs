@@ -1,0 +1,348 @@
+<%
+    const Roles = { ADMINISTRATOR: 1, SCHOOL_OWNER: 2, INSTRUCTOR: 3 };
+
+    const STATUS_LABEL = {
+        pending:   'Pending Review',
+        accepted:  'Accepted',
+        declined:  'Declined',
+        cancelled: 'Cancelled',
+        completed: 'Completed'
+    };
+
+    const fmtDate = (d) => d
+        ? new Date(d).toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' })
+        : '—';
+
+    const fmtTime = (t) => {
+        if (!t) return null;
+        const [h, m] = t.split(':');
+        const hour = parseInt(h, 10);
+        return `${hour % 12 || 12}:${m} ${hour < 12 ? 'AM' : 'PM'}`;
+    };
+
+    const fmtDatetime = (dt) => dt
+        ? new Date(dt).toLocaleString('en-US', { dateStyle:'medium', timeStyle:'short' })
+        : null;
+
+    const canAccept   = isInstructor  && request.status === 'pending';
+    const canDecline  = isInstructor  && request.status === 'pending';
+    const canCancel   = isSchoolOwner && ['pending', 'accepted'].includes(request.status);
+    const canComplete = isSchoolOwner && request.status === 'accepted';
+
+    // Pre-compute the cancel confirm message here to avoid escaped-quote
+    // syntax errors inside EJS attribute expressions.
+    const cancelConfirmMsg = request.status === 'accepted'
+        ? 'This instructor has already accepted. Are you sure you want to cancel?'
+        : 'Cancel this request?';
+%>
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="/bookings" class="text-decoration-none">Bookings</a></li>
+        <li class="breadcrumb-item active">Request #<%= request.id %></li>
+    </ol>
+</nav>
+
+<!-- Status banner -->
+<%
+    const bannerClass = {
+        pending:   'bg-warning bg-opacity-10 border-warning text-warning-emphasis',
+        accepted:  'bg-success bg-opacity-10 border-success text-success-emphasis',
+        declined:  'bg-danger  bg-opacity-10 border-danger  text-danger-emphasis',
+        cancelled: 'bg-secondary bg-opacity-10 border-secondary text-secondary',
+        completed: 'bg-primary bg-opacity-10 border-primary text-primary-emphasis'
+    }[request.status] || 'bg-light border-secondary';
+
+    const bannerIcon = {
+        pending:   'bi-hourglass-split',
+        accepted:  'bi-check-circle-fill',
+        declined:  'bi-x-circle-fill',
+        cancelled: 'bi-slash-circle-fill',
+        completed: 'bi-trophy-fill'
+    }[request.status] || 'bi-circle';
+%>
+<div class="card border-2 <%= bannerClass %> mb-4">
+    <div class="card-body py-3 px-4 d-flex align-items-center gap-3">
+        <i class="bi <%= bannerIcon %> fs-4"></i>
+        <div>
+            <div class="fw-bold fs-5"><%= STATUS_LABEL[request.status] || request.status %></div>
+            <% if (request.responded_at) { %>
+                <small>Responded <%= fmtDatetime(request.responded_at) %></small>
+            <% } else { %>
+                <small>Sent <%= fmtDatetime(request.created_at) %></small>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    <!-- Left — Request details -->
+    <div class="col-lg-7">
+
+        <!-- Core details card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom fw-semibold py-3">
+                <i class="bi bi-info-circle text-danger me-2"></i>Request Details
+            </div>
+            <div class="card-body p-4">
+                <dl class="row mb-0 small">
+
+                    <dt class="col-sm-4 text-muted fw-normal">Date</dt>
+                    <dd class="col-sm-8 fw-semibold"><%= fmtDate(request.requested_date) %></dd>
+
+                    <% if (request.requested_time) { %>
+                        <dt class="col-sm-4 text-muted fw-normal">Start Time</dt>
+                        <dd class="col-sm-8"><%= fmtTime(request.requested_time) %></dd>
+                    <% } %>
+
+                    <% const location = request.location_name || request.event_location; %>
+                    <% if (location) { %>
+                        <dt class="col-sm-4 text-muted fw-normal">Location</dt>
+                        <dd class="col-sm-8"><%= location %></dd>
+                    <% } %>
+
+                    <% if (request.required_rank) { %>
+                        <dt class="col-sm-4 text-muted fw-normal">Min. Rank</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-danger bg-opacity-10 text-danger fw-normal">
+                                <%= request.required_rank %>
+                            </span>
+                        </dd>
+                    <% } %>
+
+                    <% if (request.judges_needed > 1) { %>
+                        <dt class="col-sm-4 text-muted fw-normal">Judges Needed</dt>
+                        <dd class="col-sm-8"><%= request.judges_needed %></dd>
+                    <% } %>
+
+                    <% if (request.event_title) { %>
+                        <dt class="col-sm-4 text-muted fw-normal">Linked Event</dt>
+                        <dd class="col-sm-8">
+                            <%= request.event_title %>
+                            <% if (request.event_start) { %>
+                                <span class="text-muted">·
+                                    <%= new Date(request.event_start).toLocaleDateString('en-US', { month:'short', day:'numeric' }) %>
+                                </span>
+                            <% } %>
+                        </dd>
+                    <% } %>
+
+                </dl>
+            </div>
+        </div>
+
+        <!-- Message from school owner -->
+        <% if (request.message) { %>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom fw-semibold py-3">
+                    <i class="bi bi-chat-left-text text-danger me-2"></i>Message from
+                    <%= request.school_name || `${request.requester_first_name} ${request.requester_last_name}` %>
+                </div>
+                <div class="card-body p-4">
+                    <p class="mb-0" style="white-space:pre-line;line-height:1.7;color:#343a40;"><%= request.message.trim() %></p>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Response from instructor -->
+        <% if (request.response_message) { %>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom fw-semibold py-3">
+                    <i class="bi bi-reply text-danger me-2"></i>Response from
+                    <%= request.instructor_first_name %> <%= request.instructor_last_name %>
+                </div>
+                <div class="card-body p-4">
+                    <p class="mb-0" style="white-space:pre-line;line-height:1.7;color:#343a40;"><%= request.response_message.trim() %></p>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- ── Action section ─────────────────────────────────────────── -->
+        <% if (canAccept || canDecline || canCancel || canComplete) { %>
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom fw-semibold py-3">
+                    <i class="bi bi-cursor text-danger me-2"></i>Actions
+                </div>
+                <div class="card-body p-4">
+
+                    <% if (canAccept) { %>
+                        <!-- Accept — one-click -->
+                        <form method="POST" action="/bookings/<%= request.id %>/accept" class="mb-3">
+                            <button type="submit" class="btn btn-success px-4 fw-semibold">
+                                <i class="bi bi-check-lg me-1"></i>Accept This Request
+                            </button>
+                            <p class="small text-muted mt-2 mb-0">
+                                The school will be notified and the event will be updated.
+                            </p>
+                        </form>
+                        <hr>
+                    <% } %>
+
+                    <% if (canDecline) { %>
+                        <!-- Decline — with optional response message -->
+                        <form method="POST" action="/bookings/<%= request.id %>/decline">
+                            <label for="responseMessage" class="form-label fw-medium">
+                                Decline with a message
+                                <span class="text-muted fw-normal">(optional)</span>
+                            </label>
+                            <textarea id="responseMessage" name="responseMessage"
+                                      class="form-control mb-2"
+                                      rows="3" maxlength="1000"
+                                      placeholder="Let the school know why you're unable to attend, or suggest an alternative date…"></textarea>
+                            <button type="submit" class="btn btn-outline-danger px-4"
+                                    onclick="return confirm('Decline this judge request?')">
+                                <i class="bi bi-x-lg me-1"></i>Decline Request
+                            </button>
+                        </form>
+                    <% } %>
+
+                    <% if (canCancel) { %>
+                        <form method="POST" action="/bookings/<%= request.id %>/cancel"
+                              onsubmit="return confirm('<%= cancelConfirmMsg %>')">
+                            <button type="submit" class="btn btn-outline-secondary px-4">
+                                <i class="bi bi-slash-circle me-1"></i>Cancel Request
+                            </button>
+                            <% if (request.status === 'accepted') { %>
+                                <p class="small text-danger mt-2 mb-0">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    The instructor has already accepted. Cancelling will notify them.
+                                </p>
+                            <% } %>
+                        </form>
+                    <% } %>
+
+                    <% if (canComplete) { %>
+                        <% if (canCancel) { %><hr><% } %>
+                        <form method="POST" action="/bookings/<%= request.id %>/complete">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="bi bi-trophy me-1"></i>Mark as Completed
+                            </button>
+                            <p class="small text-muted mt-2 mb-0">
+                                Use this after the event has taken place.
+                            </p>
+                        </form>
+                    <% } %>
+
+                </div>
+            </div>
+        <% } %>
+
+    </div>
+
+    <!-- Right — People involved -->
+    <div class="col-lg-5">
+
+        <!-- Instructor card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom fw-semibold py-3">
+                <i class="bi bi-person-badge text-danger me-2"></i>Instructor
+            </div>
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <% if (request.instructor_photo) { %>
+                        <img src="<%= request.instructor_photo %>"
+                             alt="<%= request.instructor_first_name %>"
+                             class="rounded-circle flex-shrink-0"
+                             width="60" height="60"
+                             style="object-fit:cover;">
+                    <% } else { %>
+                        <div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0"
+                             style="width:60px;height:60px;">
+                            <i class="bi bi-person-fill text-secondary fs-3"></i>
+                        </div>
+                    <% } %>
+                    <div>
+                        <div class="fw-bold">
+                            <%= request.instructor_first_name %> <%= request.instructor_last_name %>
+                        </div>
+                        <% if (request.instructor_rank) { %>
+                            <small class="text-muted"><%= request.instructor_rank %></small>
+                        <% } %>
+                        <% if (request.instructor_cert_level) { %>
+                            <div>
+                                <span class="badge bg-danger bg-opacity-10 text-danger fw-normal small">
+                                    <%= request.instructor_cert_level %>
+                                </span>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+                <a href="/instructors/<%= request.instructor_id %>"
+                   class="btn btn-sm btn-outline-secondary w-100">
+                    View Instructor Profile
+                </a>
+            </div>
+        </div>
+
+        <!-- School / Requester card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom fw-semibold py-3">
+                <i class="bi bi-building text-danger me-2"></i>Requested By
+            </div>
+            <div class="card-body p-4">
+                <% if (request.school_name) { %>
+                    <div class="fw-bold mb-1"><%= request.school_name %></div>
+                    <div class="small text-muted">
+                        <% if (request.school_slug) { %>
+                            <a href="/schools/<%= request.school_slug %>" class="text-decoration-none text-muted">
+                                View school page <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        <% } %>
+                    </div>
+                <% } else { %>
+                    <div class="fw-bold mb-0">
+                        <%= request.requester_first_name %> <%= request.requester_last_name %>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom fw-semibold py-3">
+                <i class="bi bi-clock-history text-danger me-2"></i>Timeline
+            </div>
+            <div class="card-body p-4">
+                <ul class="list-unstyled mb-0">
+                    <li class="d-flex gap-3 mb-3">
+                        <div class="flex-shrink-0 rounded-circle bg-dark d-flex align-items-center justify-content-center"
+                             style="width:28px;height:28px;">
+                            <i class="bi bi-send-fill text-white" style="font-size:.6rem;"></i>
+                        </div>
+                        <div>
+                            <div class="small fw-semibold">Request Sent</div>
+                            <div class="small text-muted"><%= fmtDatetime(request.created_at) %></div>
+                        </div>
+                    </li>
+                    <% if (['accepted','declined','cancelled','completed'].includes(request.status)) { %>
+                        <li class="d-flex gap-3 mb-3">
+                            <div class="flex-shrink-0 rounded-circle d-flex align-items-center justify-content-center <%= STATUS_BADGE[request.status] %>"
+                                 style="width:28px;height:28px;">
+                                <i class="bi <%=
+                                    {accepted:'bi-check-lg',declined:'bi-x-lg',cancelled:'bi-slash-lg',completed:'bi-trophy-fill'}[request.status]
+                                %> text-white" style="font-size:.6rem;"></i>
+                            </div>
+                            <div>
+                                <div class="small fw-semibold"><%= STATUS_LABEL[request.status] %></div>
+                                <div class="small text-muted">
+                                    <%= fmtDatetime(request.responded_at || request.updated_at) %>
+                                </div>
+                            </div>
+                        </li>
+                    <% } else { %>
+                        <li class="d-flex gap-3 opacity-50">
+                            <div class="flex-shrink-0 rounded-circle border d-flex align-items-center justify-content-center"
+                                 style="width:28px;height:28px;">
+                                <i class="bi bi-hourglass-split text-muted" style="font-size:.6rem;"></i>
+                            </div>
+                            <div class="small text-muted pt-1">Awaiting instructor response</div>
+                        </li>
+                    <% } %>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+</div>

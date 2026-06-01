@@ -1,0 +1,251 @@
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="h4 fw-bold mb-1"><%= school ? `Edit — ${school.name}` : 'Create School' %></h2>
+        <p class="text-muted small mb-0">
+            <% if (school) { %>
+                <a href="/schools/<%= school.slug %>" class="text-decoration-none" target="_blank">
+                    <i class="bi bi-eye me-1"></i>View public page
+                </a>
+            <% } else { %>
+                Set up your school so instructors and event visitors can find you.
+            <% } %>
+        </p>
+    </div>
+    <a href="<%= school ? `/schools/mine/${school.id}/manage` : '/schools/mine' %>"
+       class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i><%= school ? 'Back to Management' : 'My Schools' %>
+    </a>
+</div>
+
+<form action="<%= school ? `/schools/mine/${school.id}` : '/schools/mine' %>"
+      method="POST" enctype="multipart/form-data" novalidate>
+
+    <!-- ── School Logo ────────────────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom fw-semibold py-3">
+            <i class="bi bi-image text-danger me-2"></i>School Logo
+        </div>
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-4 flex-wrap">
+                <div class="flex-shrink-0">
+                    <% const currentLogo = school && school.logo_url; %>
+                    <% if (currentLogo) { %>
+                        <img id="logoPreview" src="<%= currentLogo %>"
+                             alt="School logo" class="rounded shadow-sm"
+                             width="90" height="90"
+                             style="object-fit:contain; background:#f8f9fa; padding:6px;">
+                    <% } else { %>
+                        <div id="logoPlaceholder"
+                             class="rounded bg-danger bg-opacity-10 d-flex align-items-center justify-content-center shadow-sm"
+                             style="width:90px;height:90px;">
+                            <i class="bi bi-building text-danger fs-2"></i>
+                        </div>
+                        <img id="logoPreview" src="" alt="Preview"
+                             class="rounded shadow-sm d-none"
+                             width="90" height="90"
+                             style="object-fit:contain; background:#f8f9fa; padding:6px;">
+                    <% } %>
+                </div>
+                <div>
+                    <label for="logo" class="btn btn-outline-secondary btn-sm mb-2">
+                        <i class="bi bi-upload me-1"></i><%= currentLogo ? 'Change Logo' : 'Upload Logo' %>
+                    </label>
+                    <input type="file" id="logo" name="logo"
+                           class="d-none <%= errors.logo ? 'is-invalid' : '' %>"
+                           accept="image/jpeg,image/png,image/webp">
+                    <% if (errors.logo) { %>
+                        <div class="invalid-feedback d-block"><%= errors.logo %></div>
+                    <% } %>
+                    <p class="text-muted small mb-0">JPEG, PNG, or WebP · Max 5 MB</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── School Information ─────────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom fw-semibold py-3">
+            <i class="bi bi-building text-danger me-2"></i>School Information
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+
+                <div class="col-sm-7">
+                    <label for="name" class="form-label fw-medium">School Name <span class="text-danger">*</span></label>
+                    <input type="text" id="name" name="name"
+                           class="form-control <%= errors.name ? 'is-invalid' : '' %>"
+                           value="<%= formData.name || (school && school.name) || '' %>"
+                           required maxlength="255"
+                           placeholder="Dragon Spirit ATA Martial Arts">
+                    <% if (errors.name) { %><div class="invalid-feedback"><%= errors.name %></div><% } %>
+                </div>
+
+                <div class="col-sm-5">
+                    <label for="headInstructorName" class="form-label fw-medium">Head Instructor Name</label>
+                    <input type="text" id="headInstructorName" name="headInstructorName"
+                           class="form-control <%= errors.headInstructorName ? 'is-invalid' : '' %>"
+                           value="<%= formData.headInstructorName || (school && school.head_instructor_name) || '' %>"
+                           maxlength="200"
+                           placeholder="e.g. Master Jane Smith">
+                    <% if (errors.headInstructorName) { %><div class="invalid-feedback"><%= errors.headInstructorName %></div><% } %>
+                </div>
+
+                <div class="col-12">
+                    <label for="description" class="form-label fw-medium">About the School</label>
+                    <textarea id="description" name="description" rows="4"
+                              class="form-control <%= errors.description ? 'is-invalid' : '' %>"
+                              maxlength="2000"
+                              placeholder="Describe your school's programs, philosophy, and community…"><%= formData.description || (school && school.description) || '' %></textarea>
+                    <% if (errors.description) { %><div class="invalid-feedback"><%= errors.description %></div><% } %>
+                    <div class="form-text text-end">
+                        <span id="descCount">0</span> / 2,000
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Location ───────────────────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom fw-semibold py-3">
+            <i class="bi bi-geo-alt text-danger me-2"></i>Location
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+
+                <div class="col-12">
+                    <label for="address" class="form-label fw-medium">Street Address</label>
+                    <input type="text" id="address" name="address"
+                           class="form-control <%= errors.address ? 'is-invalid' : '' %>"
+                           value="<%= formData.address || (school && school.address) || '' %>"
+                           maxlength="255" placeholder="1420 Ridgemont Ave">
+                    <% if (errors.address) { %><div class="invalid-feedback"><%= errors.address %></div><% } %>
+                </div>
+
+                <div class="col-sm-5">
+                    <label for="city" class="form-label fw-medium">City</label>
+                    <input type="text" id="city" name="city"
+                           class="form-control <%= errors.city ? 'is-invalid' : '' %>"
+                           value="<%= formData.city || (school && school.city) || '' %>"
+                           maxlength="100" placeholder="Austin">
+                    <% if (errors.city) { %><div class="invalid-feedback"><%= errors.city %></div><% } %>
+                </div>
+
+                <div class="col-sm-4">
+                    <label for="state" class="form-label fw-medium">State / Province</label>
+                    <input type="text" id="state" name="state"
+                           class="form-control <%= errors.state ? 'is-invalid' : '' %>"
+                           value="<%= formData.state || (school && school.state) || '' %>"
+                           maxlength="100" placeholder="TX">
+                    <% if (errors.state) { %><div class="invalid-feedback"><%= errors.state %></div><% } %>
+                </div>
+
+                <div class="col-sm-3">
+                    <label for="postalCode" class="form-label fw-medium">Postal Code</label>
+                    <input type="text" id="postalCode" name="postalCode"
+                           class="form-control <%= errors.postalCode ? 'is-invalid' : '' %>"
+                           value="<%= formData.postalCode || (school && school.postal_code) || '' %>"
+                           maxlength="20" placeholder="78723">
+                    <% if (errors.postalCode) { %><div class="invalid-feedback"><%= errors.postalCode %></div><% } %>
+                </div>
+
+                <div class="col-sm-4">
+                    <label for="country" class="form-label fw-medium">Country</label>
+                    <input type="text" id="country" name="country"
+                           class="form-control <%= errors.country ? 'is-invalid' : '' %>"
+                           value="<%= formData.country || (school && school.country) || 'US' %>"
+                           maxlength="100" placeholder="US">
+                    <% if (errors.country) { %><div class="invalid-feedback"><%= errors.country %></div><% } %>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Contact ────────────────────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom fw-semibold py-3">
+            <i class="bi bi-envelope text-danger me-2"></i>Contact Information
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+
+                <div class="col-sm-4">
+                    <label for="phone" class="form-label fw-medium">Phone</label>
+                    <input type="tel" id="phone" name="phone"
+                           class="form-control <%= errors.phone ? 'is-invalid' : '' %>"
+                           value="<%= formData.phone || (school && school.phone) || '' %>"
+                           maxlength="30" placeholder="(512) 555-0100">
+                    <% if (errors.phone) { %><div class="invalid-feedback"><%= errors.phone %></div><% } %>
+                </div>
+
+                <div class="col-sm-4">
+                    <label for="email" class="form-label fw-medium">Email</label>
+                    <input type="email" id="email" name="email"
+                           class="form-control <%= errors.email ? 'is-invalid' : '' %>"
+                           value="<%= formData.email || (school && school.email) || '' %>"
+                           placeholder="info@yourschool.com">
+                    <% if (errors.email) { %><div class="invalid-feedback"><%= errors.email %></div><% } %>
+                </div>
+
+                <div class="col-sm-4">
+                    <label for="websiteUrl" class="form-label fw-medium">Website</label>
+                    <input type="url" id="websiteUrl" name="websiteUrl"
+                           class="form-control <%= errors.websiteUrl ? 'is-invalid' : '' %>"
+                           value="<%= formData.websiteUrl || (school && school.website_url) || '' %>"
+                           placeholder="https://yourschool.com">
+                    <% if (errors.websiteUrl) { %><div class="invalid-feedback"><%= errors.websiteUrl %></div><% } %>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Visibility ─────────────────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom fw-semibold py-3">
+            <i class="bi bi-eye text-danger me-2"></i>Visibility
+        </div>
+        <div class="card-body p-4">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch"
+                       id="isActive" name="isActive"
+                       <%= (!school || school.is_active) ? 'checked' : '' %>>
+                <label class="form-check-label fw-medium" for="isActive">
+                    Active — appears in the school directory
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mb-2">
+        <a href="<%= school ? `/schools/mine/${school.id}/manage` : '/schools/mine' %>" class="btn btn-outline-secondary px-4">Cancel</a>
+        <button type="submit" class="btn btn-danger px-4 fw-semibold">
+            <i class="bi bi-check-lg me-1"></i>Save School Profile
+        </button>
+    </div>
+
+</form>
+
+<script>
+document.getElementById('logo').addEventListener('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const preview     = document.getElementById('logoPreview');
+        const placeholder = document.getElementById('logoPlaceholder');
+        preview.src = e.target.result;
+        preview.classList.remove('d-none');
+        if (placeholder) placeholder.classList.add('d-none');
+    };
+    reader.readAsDataURL(file);
+});
+
+const descEl    = document.getElementById('description');
+const countEl   = document.getElementById('descCount');
+const updateCnt = () => { countEl.textContent = descEl.value.length; };
+descEl.addEventListener('input', updateCnt);
+updateCnt();
+</script>

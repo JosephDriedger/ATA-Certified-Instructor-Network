@@ -1,0 +1,261 @@
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="/instructors" class="text-decoration-none">Instructors</a></li>
+        <li class="breadcrumb-item active"><%= instructor.first_name %> <%= instructor.last_name %></li>
+    </ol>
+</nav>
+
+<!-- Profile hero card -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4 p-md-5">
+        <div class="row g-4 align-items-center">
+
+            <!-- Photo -->
+            <div class="col-auto">
+                <% if (instructor.profile_photo_url) { %>
+                    <img
+                        src="<%= instructor.profile_photo_url %>"
+                        alt="<%= instructor.first_name %> <%= instructor.last_name %>"
+                        class="rounded-circle shadow-sm"
+                        width="120" height="120"
+                        style="object-fit:cover;">
+                <% } else { %>
+                    <div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center shadow-sm"
+                         style="width:120px;height:120px;">
+                        <i class="bi bi-person-fill text-secondary" style="font-size:3rem;"></i>
+                    </div>
+                <% } %>
+            </div>
+
+            <!-- Identity -->
+            <div class="col">
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                    <h1 class="h3 fw-bold mb-0">
+                        <%= instructor.first_name %> <%= instructor.last_name %>
+                    </h1>
+                    <% if (!instructor.is_public) { %>
+                        <span class="badge bg-warning text-dark">Private Profile</span>
+                    <% } %>
+                </div>
+
+                <% if (instructor.rank) { %>
+                    <p class="text-muted mb-1 fw-medium"><%= instructor.rank %></p>
+                <% } %>
+
+                <% if (instructor.certification_level) { %>
+                    <span class="badge bg-danger bg-opacity-10 text-danger me-2">
+                        <i class="bi bi-patch-check me-1"></i><%= instructor.certification_level %>
+                    </span>
+                <% } %>
+
+                <% if (user && instructor.ata_member_number) { %>
+                    <span class="badge bg-light text-muted border">
+                        ATA #<%= instructor.ata_member_number %>
+                    </span>
+                <% } %>
+                <% if (user && certifiedInstructorNumber) { %>
+                    <span class="badge bg-light text-muted border">
+                        CI #<%= certifiedInstructorNumber %>
+                    </span>
+                <% } %>
+
+                <div class="d-flex flex-wrap gap-3 mt-3 small text-muted">
+                    <% if (instructor.school_name) { %>
+                        <span>
+                            <i class="bi bi-building me-1"></i>
+                            <a href="/schools/<%= instructor.school_slug %>" class="text-decoration-none text-muted">
+                                <%= instructor.school_name %>
+                            </a>
+                        </span>
+                    <% } %>
+                    <% if (instructor.city || instructor.state) { %>
+                        <span>
+                            <i class="bi bi-geo-alt me-1"></i>
+                            <%= [instructor.city, instructor.state, instructor.country !== 'US' ? instructor.country : ''].filter(Boolean).join(', ') %>
+                        </span>
+                    <% } %>
+                    <% if (instructor.years_experience) { %>
+                        <span>
+                            <i class="bi bi-clock-history me-1"></i>
+                            <%= instructor.years_experience %> yr<%= instructor.years_experience !== 1 ? 's' : '' %> teaching
+                        </span>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="col-md-auto d-flex flex-wrap gap-2">
+                <% if (isOwner) { %>
+                    <a href="/profile/instructor" class="btn btn-outline-danger">
+                        <i class="bi bi-pencil me-1"></i>Edit Profile
+                    </a>
+                <% } else if (user) { %>
+                    <% if (canRequest) { %>
+                        <a href="/judge-requests/create?instructorId=<%= instructor.id %>" class="btn btn-danger">
+                            <i class="bi bi-calendar-plus me-1"></i>Send Judge Request
+                        </a>
+                    <% } %>
+                    <a href="/messages/compose?userId=<%= instructor.user_id %>"
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-chat-dots me-1"></i>Message
+                    </a>
+
+                    <!-- Roster actions for school owners -->
+                    <% if (canRequest && ownedSchools && ownedSchools.length > 0) { %>
+                        <% ownedSchools.forEach(s => { %>
+                            <% const onRoster = rosterSchoolIds && rosterSchoolIds.includes(s.id); %>
+                            <% if (onRoster) { %>
+                                <form method="POST"
+                                      action="/schools/mine/<%= s.id %>/roster/<%= instructor.id %>/remove"
+                                      onsubmit="return confirm('Remove from <%= s.name %> roster?')">
+                                    <button type="submit"
+                                            class="btn btn-outline-secondary btn-sm"
+                                            title="Remove from <%= s.name %> roster">
+                                        <i class="bi bi-person-dash me-1"></i>
+                                        <% if (ownedSchools.length > 1) { %>Remove from <%= s.name %><% } else { %>Remove from Roster<% } %>
+                                    </button>
+                                </form>
+                            <% } else { %>
+                                <form method="POST" action="/schools/mine/<%= s.id %>/roster">
+                                    <input type="hidden" name="instructorId" value="<%= instructor.id %>">
+                                    <button type="submit"
+                                            class="btn btn-outline-success btn-sm"
+                                            title="Add to <%= s.name %> roster">
+                                        <i class="bi bi-person-plus me-1"></i>
+                                        <% if (ownedSchools.length > 1) { %>Add to <%= s.name %><% } else { %>Add to Roster<% } %>
+                                    </button>
+                                </form>
+                            <% } %>
+                        <% }) %>
+                    <% } %>
+                <% } %>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    <!-- Left column: Bio + Specialties -->
+    <div class="col-lg-8">
+
+        <!-- Biography -->
+        <% if (instructor.bio) { %>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-person-lines-fill text-danger me-2"></i>About
+                    </h5>
+                    <p class="mb-0" style="white-space:pre-line;line-height:1.7;color:#343a40;"><%= instructor.bio.trim() %></p>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Specialties -->
+        <% if (instructor.specialties && instructor.specialties.length > 0) { %>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-star-fill text-danger me-2"></i>Specialties
+                    </h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        <% instructor.specialties.forEach(s => { %>
+                            <span class="badge bg-light text-dark border px-3 py-2 fw-normal"><%= s %></span>
+                        <% }) %>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+
+    </div>
+
+    <!-- Right column: Availability + Contact -->
+    <div class="col-lg-4">
+
+        <!-- Availability -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3">
+                    <i class="bi bi-calendar2-check text-danger me-2"></i>Availability
+                </h5>
+                <ul class="list-unstyled mb-0">
+                    <li class="d-flex align-items-center gap-2 mb-2">
+                        <% if (instructor.is_available_for_events) { %>
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            <span class="small">Available for Events</span>
+                        <% } else { %>
+                            <i class="bi bi-x-circle-fill text-secondary opacity-50"></i>
+                            <span class="small text-muted">Not Available for Events</span>
+                        <% } %>
+                    </li>
+                    <li class="d-flex align-items-center gap-2 mb-2">
+                        <% if (instructor.is_available_for_testing) { %>
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            <span class="small">Available for Belt Testing</span>
+                        <% } else { %>
+                            <i class="bi bi-x-circle-fill text-secondary opacity-50"></i>
+                            <span class="small text-muted">Not Available for Testing</span>
+                        <% } %>
+                    </li>
+                    <li class="d-flex align-items-center gap-2 mb-2">
+                        <% if (instructor.is_available_for_seminars) { %>
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            <span class="small">Available for Seminars</span>
+                        <% } else { %>
+                            <i class="bi bi-x-circle-fill text-secondary opacity-50"></i>
+                            <span class="small text-muted">Not Available for Seminars</span>
+                        <% } %>
+                    </li>
+                    <% if (instructor.travel_radius_miles) { %>
+                        <li class="d-flex align-items-center gap-2 mt-3 pt-3 border-top">
+                            <i class="bi bi-car-front-fill text-primary"></i>
+                            <span class="small">
+                                Travels up to <strong><%= instructor.travel_radius_miles %> miles</strong>
+                            </span>
+                        </li>
+                    <% } %>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Contact — visible to logged-in users only -->
+        <% if (user) { %>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-envelope text-danger me-2"></i>Contact
+                    </h5>
+                    <ul class="list-unstyled mb-0 small">
+                        <% if (instructor.email) { %>
+                            <li class="mb-2">
+                                <i class="bi bi-envelope me-2 text-muted"></i>
+                                <a href="mailto:<%= instructor.email %>" class="text-decoration-none">
+                                    <%= instructor.email %>
+                                </a>
+                            </li>
+                        <% } %>
+                        <% if (instructor.phone) { %>
+                            <li>
+                                <i class="bi bi-telephone me-2 text-muted"></i>
+                                <a href="tel:<%= instructor.phone %>" class="text-decoration-none">
+                                    <%= instructor.phone %>
+                                </a>
+                            </li>
+                        <% } %>
+                    </ul>
+                </div>
+            </div>
+        <% } else { %>
+            <div class="card border-0 shadow-sm mb-4 bg-light">
+                <div class="card-body p-4 text-center">
+                    <i class="bi bi-lock fs-3 text-muted mb-2 d-block"></i>
+                    <p class="small text-muted mb-2">Sign in to view contact information.</p>
+                    <a href="/login" class="btn btn-sm btn-danger">Sign In</a>
+                </div>
+            </div>
+        <% } %>
+
+    </div>
+</div>

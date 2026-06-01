@@ -1,0 +1,157 @@
+<!-- Page header -->
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div>
+        <h2 class="h4 fw-bold mb-1"><%= title %></h2>
+        <p class="text-muted mb-0 small">
+            <% if (total > 0) { %>
+                Showing <%= instructors.length %> of <%= total %>
+                <%= isDateSearch ? 'available instructor' : 'certified instructor' %><%= total !== 1 ? 's' : '' %>
+                <% if (isDateSearch && selectedDate) { %>
+                    on <strong><%= new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' }) %></strong>
+                <% } %>
+            <% } else { %>
+                No instructors found
+            <% } %>
+        </p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <% if (user && user.roleId === 1) { %>
+            <a href="/availability" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-calendar-check me-1"></i>Manage Availability
+            </a>
+            <a href="/profile/instructor" class="btn btn-danger btn-sm">
+                <i class="bi bi-pencil me-1"></i>Edit Profile
+            </a>
+        <% } %>
+    </div>
+</div>
+
+<!-- ── Search & filter form ────────────────────────────────────────────────── -->
+<form method="GET" action="/instructors" class="mb-4">
+    <div class="row g-2 align-items-end">
+
+        <!-- Date availability search (primary, highlighted when active) -->
+        <div class="col-sm-6 col-md-3">
+            <label for="date" class="form-label fw-medium small mb-1">
+                <i class="bi bi-calendar-check me-1 text-danger"></i>Available On
+            </label>
+            <input type="date" id="date" name="date"
+                   class="form-control <%= isDateSearch ? 'border-danger' : '' %>"
+                   value="<%= selectedDate || '' %>"
+                   min="<%= new Date().toISOString().split('T')[0] %>">
+        </div>
+
+        <!-- State filter (relevant for date search) -->
+        <div class="col-sm-6 col-md-2">
+            <label for="state" class="form-label fw-medium small mb-1">State</label>
+            <input type="text" id="state" name="state"
+                   class="form-control"
+                   value="<%= selectedState || '' %>"
+                   placeholder="e.g. TX"
+                   maxlength="100">
+        </div>
+
+        <!-- Specialty filter -->
+        <div class="col-sm-6 col-md-3">
+            <label for="specialty" class="form-label fw-medium small mb-1">Specialty</label>
+            <select id="specialty" name="specialty" class="form-select">
+                <option value="">All Specialties</option>
+                <% SPECIALTIES.forEach(s => { %>
+                    <option value="<%= s %>" <%= (selectedSpecialty === s) ? 'selected' : '' %>><%= s %></option>
+                <% }) %>
+            </select>
+        </div>
+
+        <!-- Name search (only shown when not in date-search mode) -->
+        <% if (!isDateSearch) { %>
+        <div class="col-sm-6 col-md-3">
+            <label for="search" class="form-label fw-medium small mb-1">Name</label>
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" id="search" name="search"
+                       class="form-control border-start-0 ps-0"
+                       placeholder="Search by name…"
+                       value="<%= search %>"
+                       maxlength="100">
+            </div>
+        </div>
+        <% } %>
+
+        <div class="col-auto">
+            <button type="submit" class="btn btn-danger px-3">
+                <%= isDateSearch ? 'Search' : 'Filter' %>
+            </button>
+            <% if (search || selectedSpecialty || selectedDate || selectedState) { %>
+                <a href="/instructors" class="btn btn-outline-secondary ms-1">Clear</a>
+            <% } %>
+        </div>
+
+    </div>
+</form>
+
+<!-- Date-search context banner -->
+<% if (isDateSearch && total === 0) { %>
+    <div class="alert alert-info d-flex align-items-center gap-2">
+        <i class="bi bi-info-circle-fill flex-shrink-0"></i>
+        <div>
+            No instructors are marked available on this date.
+            Try a different date, remove the state filter, or
+            <a href="/instructors" class="alert-link">browse all instructors</a>.
+        </div>
+    </div>
+<% } %>
+
+<!-- Results grid -->
+<% if (instructors.length > 0) { %>
+    <div class="row g-4 mb-4">
+        <% instructors.forEach(instructor => { %>
+            <div class="col-sm-6 col-lg-4 col-xl-3">
+                <%- include('../../partials/instructor-card', { instructor, compact: false, showAvailability: isDateSearch }) %>
+            </div>
+        <% }) %>
+    </div>
+<% } else if (!isDateSearch) { %>
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-people fs-1 d-block mb-3 opacity-25"></i>
+        <p class="mb-1">No instructors match your search.</p>
+        <% if (search || selectedSpecialty) { %>
+            <a href="/instructors" class="btn btn-sm btn-outline-secondary mt-2">Clear filters</a>
+        <% } %>
+    </div>
+<% } %>
+
+<!-- Pagination -->
+<% if (totalPages > 1) { %>
+    <%
+        const pageQ = (p) => {
+            const params = new URLSearchParams();
+            params.set('page', p);
+            if (selectedDate)      params.set('date',      selectedDate);
+            if (selectedState)     params.set('state',     selectedState);
+            if (selectedSpecialty) params.set('specialty', selectedSpecialty);
+            if (search)            params.set('search',    search);
+            return '?' + params.toString();
+        };
+    %>
+    <nav aria-label="Instructor directory pages">
+        <ul class="pagination justify-content-center">
+            <li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
+                <a class="page-link" href="<%= pageQ(page - 1) %>"><i class="bi bi-chevron-left"></i></a>
+            </li>
+            <% for (let p = 1; p <= totalPages; p++) { %>
+                <% if (p === 1 || p === totalPages || Math.abs(p - page) <= 2) { %>
+                    <li class="page-item <%= p === page ? 'active' : '' %>">
+                        <a class="page-link" href="<%= pageQ(p) %>"><%= p %></a>
+                    </li>
+                <% } else if (Math.abs(p - page) === 3) { %>
+                    <li class="page-item disabled"><span class="page-link">…</span></li>
+                <% } %>
+            <% } %>
+            <li class="page-item <%= page >= totalPages ? 'disabled' : '' %>">
+                <a class="page-link" href="<%= pageQ(page + 1) %>"><i class="bi bi-chevron-right"></i></a>
+            </li>
+        </ul>
+    </nav>
+<% } %>

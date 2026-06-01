@@ -1,0 +1,122 @@
+/* ── ACIN Global Styles ──────────────────────────────────────────────────── */
+
+:root {
+    --acin-red:        #dc3545;   /* Bootstrap danger */
+    --acin-dark:       #212529;   /* Bootstrap dark */
+    --acin-card-bg:    #ffffff;
+    --acin-body-bg:    #f8f9fa;
+}
+
+body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--acin-body-bg);
+    /* Ensure Bootstrap 5.3 secondary color stays readable gray in all color modes */
+    --bs-secondary-color: rgba(33, 37, 41, 0.65);
+}
+
+/* Definition list values should never inherit link color */
+dd {
+    color: #212529;
+}
+
+/* ── Navbar ──────────────────────────────────────────────────────────────── */
+
+.navbar-brand {
+    letter-spacing: -0.3px;
+}
+
+/* ── Cards ───────────────────────────────────────────────────────────────── */
+
+.card {
+    border-radius: 0.625rem;
+}
+
+/* ── Forms ───────────────────────────────────────────────────────────────── */
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--acin-red);
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15);
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+
+.btn-danger {
+    --bs-btn-font-weight: 500;
+}
+
+/* ── Dashboard stat cards ────────────────────────────────────────────────── */
+
+.card-body .rounded {
+    border-radius: 0.5rem !important;
+}
+
+/* ── Flash alerts ────────────────────────────────────────────────────────── */
+
+.alert {
+    border-radius: 0.625rem;
+}
+
+/* ── Availability Calendar ───────────────────────────────────────────────── */
+
+.cal-day {
+    min-height:       60px;
+    padding:          6px 8px;
+    border-radius:    6px;
+    border:           1px solid #dee2e6;
+    cursor:           pointer;
+    transition:       background-color 0.12s ease, border-color 0.12s ease;
+    user-select:      none;
+    display:          flex;
+    flex-direction:   column;
+    align-items:      flex-start;
+}
+
+.cal-day:hover:not(.cal-past) {
+    border-color: var(--acin-red);
+}
+
+/* Selected state — applied by JS on click */
+.cal-day.selected {
+    border-color: var(--acin-red) !important;
+    outline:      2px solid var(--acin-red);
+    outline-offset: 1px;
+}
+
+/* Explicitly available */
+.cal-day.cal-available {
+    background-color: rgba(25, 135, 84, 0.07);
+    border-color:     rgba(25, 135, 84, 0.4);
+}
+
+/* Explicitly blocked */
+.cal-day.cal-blocked {
+    background-color: rgba(220, 53, 69, 0.07);
+    border-color:     rgba(220, 53, 69, 0.4);
+}
+
+/* No explicit entry (default) */
+.cal-day.cal-default {
+    background-color: #ffffff;
+}
+
+/* Past dates — greyed out, not interactive */
+.cal-day.cal-past {
+    opacity:        0.35;
+    cursor:         default;
+    pointer-events: none;
+}
+
+/* Today highlight */
+.cal-day.cal-today {
+    border-color: var(--acin-red);
+    border-width: 2px;
+}
+
+.cal-day-number {
+    font-size:   0.8rem;
+    font-weight: 600;
+    line-height: 1;
+    color:       #212529;
+    margin-bottom: 2px;
+}

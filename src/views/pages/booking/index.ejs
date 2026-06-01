@@ -1,0 +1,210 @@
+<%
+    const STATUS_LABELS = {
+        pending:   'Pending',
+        accepted:  'Accepted',
+        declined:  'Declined',
+        cancelled: 'Cancelled',
+        completed: 'Completed'
+    };
+    const ALL_STATUSES = Object.keys(STATUS_LABELS);
+
+    // Format a date string for display
+    const fmtDate = (d) => d
+        ? new Date(d).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' })
+        : '—';
+    const fmtTime = (t) => {
+        if (!t) return '';
+        const [h, m] = t.split(':');
+        const hour = parseInt(h, 10);
+        return `${hour % 12 || 12}:${m} ${hour < 12 ? 'AM' : 'PM'}`;
+    };
+%>
+
+<!-- Header -->
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div>
+        <h2 class="h4 fw-bold mb-1">
+            <%= isInstructor ? 'Received Judge Requests' : 'Sent Judge Requests' %>
+        </h2>
+        <p class="text-muted small mb-0">
+            <%= total %> request<%= total !== 1 ? 's' : '' %>
+            <% if (statusFilter) { %>
+                · filtered by <strong><%= STATUS_LABELS[statusFilter] || statusFilter %></strong>
+            <% } %>
+        </p>
+    </div>
+
+    <!-- Toggle for users who are both school owners and instructors -->
+    <% if (canToggleView) { %>
+        <div class="btn-group" role="group" aria-label="Booking view">
+            <a href="/bookings?view=sent"
+               class="btn btn-sm <%= currentView === 'sent' ? 'btn-dark' : 'btn-outline-secondary' %>">
+                <i class="bi bi-send me-1"></i>Sent
+            </a>
+            <a href="/bookings?view=received"
+               class="btn btn-sm <%= currentView === 'received' ? 'btn-dark' : 'btn-outline-secondary' %>">
+                <i class="bi bi-inbox me-1"></i>Received
+            </a>
+        </div>
+    <% } %>
+    <% if (!isInstructor) { %>
+        <a href="/instructors" class="btn btn-danger btn-sm">
+            <i class="bi bi-person-plus me-1"></i>Find Instructors
+        </a>
+    <% } %>
+</div>
+
+<!-- Status tabs -->
+<%
+    const viewParam = canToggleView ? `&view=${currentView}` : '';
+%>
+<ul class="nav nav-pills mb-4 gap-1 flex-wrap">
+    <li class="nav-item">
+        <a class="nav-link py-1 px-3 <%= !statusFilter ? 'active bg-dark' : 'text-muted' %>"
+           href="/bookings?<%= canToggleView ? `view=${currentView}` : '' %>">All</a>
+    </li>
+    <% ALL_STATUSES.forEach(s => { %>
+        <li class="nav-item">
+            <a class="nav-link py-1 px-3 <%= statusFilter === s ? 'active bg-dark' : 'text-muted' %>"
+               href="/bookings?status=<%= s %><%= viewParam %>">
+                <%= STATUS_LABELS[s] %>
+            </a>
+        </li>
+    <% }) %>
+</ul>
+
+<!-- Request list -->
+<% if (requests.length === 0) { %>
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-journal-x fs-1 d-block mb-3 opacity-25"></i>
+        <p class="mb-0">
+            <% if (statusFilter) { %>
+                No <%= STATUS_LABELS[statusFilter]?.toLowerCase() %> requests.
+                <a href="/bookings" class="text-decoration-none ms-1">View all</a>
+            <% } else if (isInstructor) { %>
+                You haven't received any judge requests yet.
+            <% } else { %>
+                You haven't sent any judge requests yet.
+                <a href="/instructors" class="text-decoration-none ms-1">Browse instructors</a>
+            <% } %>
+        </p>
+    </div>
+<% } else { %>
+    <div class="d-flex flex-column gap-3 mb-4">
+        <% requests.forEach(req => { %>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="row align-items-center g-3">
+
+                        <!-- Status badge -->
+                        <div class="col-auto">
+                            <span class="badge <%= STATUS_BADGE[req.status] || 'bg-secondary' %> rounded-pill px-3 py-2">
+                                <%= STATUS_LABELS[req.status] || req.status %>
+                            </span>
+                        </div>
+
+                        <!-- Core info -->
+                        <div class="col">
+                            <% if (isInstructor) { %>
+                                <!-- Instructor sees WHO sent the request -->
+                                <div class="fw-semibold">
+                                    <%= req.requester_first_name %> <%= req.requester_last_name %>
+                                    <% if (req.school_name) { %>
+                                        <span class="text-muted fw-normal">· <%= req.school_name %></span>
+                                    <% } %>
+                                </div>
+                            <% } else { %>
+                                <!-- School owner sees WHO they requested -->
+                                <div class="d-flex align-items-center gap-2">
+                                    <% if (req.instructor_photo) { %>
+                                        <img src="<%= req.instructor_photo %>"
+                                             class="rounded-circle flex-shrink-0"
+                                             width="32" height="32"
+                                             style="object-fit:cover;">
+                                    <% } %>
+                                    <span class="fw-semibold">
+                                        <%= req.instructor_first_name %> <%= req.instructor_last_name %>
+                                    </span>
+                                    <% if (req.instructor_rank) { %>
+                                        <span class="badge bg-light text-dark border fw-normal small">
+                                            <%= req.instructor_rank %>
+                                        </span>
+                                    <% } %>
+                                </div>
+                            <% } %>
+
+                            <div class="small text-muted mt-1 d-flex flex-wrap gap-3">
+                                <span>
+                                    <i class="bi bi-calendar3 me-1"></i><%= fmtDate(req.requested_date) %>
+                                    <% if (req.requested_time) { %> at <%= fmtTime(req.requested_time) %><% } %>
+                                </span>
+                                <% if (req.event_title) { %>
+                                    <span>
+                                        <i class="bi bi-calendar-event me-1"></i><%= req.event_title %>
+                                    </span>
+                                <% } %>
+                                <% if (req.location_name) { %>
+                                    <span>
+                                        <i class="bi bi-geo-alt me-1"></i><%= req.location_name %>
+                                    </span>
+                                <% } %>
+                                <% if (req.required_rank) { %>
+                                    <span>
+                                        <i class="bi bi-award me-1"></i>Min. <%= req.required_rank %>
+                                    </span>
+                                <% } %>
+                                <% if (req.judges_needed > 1) { %>
+                                    <span>
+                                        <i class="bi bi-people me-1"></i><%= req.judges_needed %> judges needed
+                                    </span>
+                                <% } %>
+                            </div>
+                        </div>
+
+                        <!-- Quick actions + View -->
+                        <div class="col-auto d-flex gap-2 align-items-center">
+                            <% if (isInstructor && req.status === 'pending') { %>
+                                <form method="POST" action="/bookings/<%= req.id %>/accept">
+                                    <button type="submit" class="btn btn-success btn-sm">Accept</button>
+                                </form>
+                                <a href="/bookings/<%= req.id %>" class="btn btn-outline-danger btn-sm">Decline</a>
+                            <% } else if (!isInstructor && req.status === 'pending') { %>
+                                <form method="POST" action="/bookings/<%= req.id %>/cancel"
+                                      onsubmit="return confirm('Cancel this request?')">
+                                    <button type="submit" class="btn btn-outline-secondary btn-sm">Cancel</button>
+                                </form>
+                            <% } %>
+                            <a href="/bookings/<%= req.id %>" class="btn btn-sm btn-outline-dark">
+                                View <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+<% } %>
+
+<!-- Pagination -->
+<% if (totalPages > 1) { %>
+    <nav aria-label="Bookings pagination">
+        <ul class="pagination justify-content-center">
+            <li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
+                <a class="page-link" href="?page=<%= page - 1 %>&status=<%= statusFilter %><%= viewParam %>">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+            </li>
+            <% for (let p = 1; p <= totalPages; p++) { %>
+                <li class="page-item <%= p === page ? 'active' : '' %>">
+                    <a class="page-link" href="?page=<%= p %>&status=<%= statusFilter %><%= viewParam %>"><%= p %></a>
+                </li>
+            <% } %>
+            <li class="page-item <%= page >= totalPages ? 'disabled' : '' %>">
+                <a class="page-link" href="?page=<%= page + 1 %>&status=<%= statusFilter %><%= viewParam %>">
+                    <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+<% } %>

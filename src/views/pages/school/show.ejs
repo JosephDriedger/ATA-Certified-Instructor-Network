@@ -1,0 +1,187 @@
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="/schools" class="text-decoration-none">Schools</a></li>
+        <li class="breadcrumb-item active"><%= school.name %></li>
+    </ol>
+</nav>
+
+<!-- School hero -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4 p-md-5">
+        <div class="row g-4 align-items-center">
+
+            <!-- Logo -->
+            <div class="col-auto">
+                <% if (school.logo_url) { %>
+                    <img src="<%= school.logo_url %>" alt="<%= school.name %> logo"
+                         class="rounded shadow-sm"
+                         width="110" height="110"
+                         style="object-fit:contain; background:#f8f9fa; padding:6px;">
+                <% } else { %>
+                    <div class="rounded bg-danger bg-opacity-10 d-flex align-items-center justify-content-center shadow-sm"
+                         style="width:110px;height:110px;">
+                        <i class="bi bi-building text-danger" style="font-size:3rem;"></i>
+                    </div>
+                <% } %>
+            </div>
+
+            <!-- Info -->
+            <div class="col">
+                <h1 class="h3 fw-bold mb-1"><%= school.name %></h1>
+
+                <% if (school.head_instructor_name) { %>
+                    <p class="text-muted fw-medium mb-2">
+                        <i class="bi bi-person-badge me-1"></i><%= school.head_instructor_name %>
+                    </p>
+                <% } %>
+
+                <div class="d-flex flex-wrap gap-3 small text-muted">
+                    <% if (school.city || school.state) { %>
+                        <span>
+                            <i class="bi bi-geo-alt me-1"></i>
+                            <%= [school.city, school.state, school.country !== 'US' ? school.country : ''].filter(Boolean).join(', ') %>
+                        </span>
+                    <% } %>
+                    <% if (school.phone) { %>
+                        <span><i class="bi bi-telephone me-1"></i><%= school.phone %></span>
+                    <% } %>
+                    <% if (school.email) { %>
+                        <span>
+                            <i class="bi bi-envelope me-1"></i>
+                            <a href="mailto:<%= school.email %>" class="text-decoration-none text-muted"><%= school.email %></a>
+                        </span>
+                    <% } %>
+                    <% if (school.website_url) { %>
+                        <span>
+                            <i class="bi bi-globe me-1"></i>
+                            <a href="<%= school.website_url %>" target="_blank" rel="noopener noreferrer" class="text-decoration-none text-muted">
+                                <%= school.website_url.replace(/^https?:\/\//, '') %>
+                            </a>
+                        </span>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Action -->
+            <div class="col-md-auto">
+                <% if (isOwner) { %>
+                    <a href="/schools/manage" class="btn btn-outline-danger">
+                        <i class="bi bi-gear me-1"></i>Manage School
+                    </a>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Description -->
+        <% if (school.description) { %>
+            <hr class="my-4">
+            <p class="mb-0" style="white-space:pre-line;line-height:1.7;color:#343a40;"><%= school.description.trim() %></p>
+        <% } %>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    <!-- Instructor Roster -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom fw-semibold py-3">
+                <i class="bi bi-people text-danger me-2"></i>Instructor Roster
+                <span class="badge bg-secondary ms-2"><%= roster.length %></span>
+            </div>
+            <% if (roster.length === 0) { %>
+                <div class="card-body text-center text-muted py-5">
+                    <i class="bi bi-people fs-2 d-block mb-2 opacity-25"></i>
+                    <small>No instructors listed yet.</small>
+                </div>
+            <% } else { %>
+                <ul class="list-group list-group-flush">
+                    <% roster.forEach(member => { %>
+                        <li class="list-group-item px-4 py-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <% if (member.profile_photo_url) { %>
+                                    <img src="<%= member.profile_photo_url %>"
+                                         alt="<%= member.first_name %>"
+                                         class="rounded-circle flex-shrink-0"
+                                         width="44" height="44"
+                                         style="object-fit:cover;">
+                                <% } else { %>
+                                    <div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0"
+                                         style="width:44px;height:44px;">
+                                        <i class="bi bi-person-fill text-secondary"></i>
+                                    </div>
+                                <% } %>
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <div class="fw-semibold text-truncate">
+                                        <%= member.first_name %> <%= member.last_name %>
+                                        <% if (member.is_primary) { %>
+                                            <span class="badge bg-danger ms-1 fw-normal small">Primary</span>
+                                        <% } %>
+                                    </div>
+                                    <div class="small" style="color:#495057;">
+                                        <% if (member.role_title) { %><span><%= member.role_title %></span><% } %>
+                                        <% if (member.role_title && member.rank) { %><span class="text-muted mx-1">·</span><% } %>
+                                        <% if (member.rank) { %><span class="text-muted"><%= member.rank %></span><% } %>
+                                    </div>
+                                </div>
+                                <a href="/instructors/<%= member.instructor_id %>"
+                                   class="btn btn-sm btn-outline-secondary flex-shrink-0">
+                                    View
+                                </a>
+                            </div>
+                        </li>
+                    <% }) %>
+                </ul>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Upcoming Events -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom fw-semibold py-3">
+                <i class="bi bi-calendar-event text-danger me-2"></i>Upcoming Events
+            </div>
+            <% if (upcomingEvents.length === 0) { %>
+                <div class="card-body text-center text-muted py-5">
+                    <i class="bi bi-calendar-x fs-2 d-block mb-2 opacity-25"></i>
+                    <small>No upcoming events.</small>
+                </div>
+            <% } else { %>
+                <ul class="list-group list-group-flush">
+                    <% upcomingEvents.forEach(ev => { %>
+                        <% const evDate = new Date(ev.start_datetime) %>
+                        <li class="list-group-item px-4 py-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="text-center flex-shrink-0"
+                                     style="width:44px;">
+                                    <div class="fw-bold text-danger lh-1">
+                                        <%= evDate.getDate() %>
+                                    </div>
+                                    <div class="small text-muted text-uppercase" style="font-size:.65rem;">
+                                        <%= evDate.toLocaleString('en-US',{month:'short'}) %>
+                                    </div>
+                                </div>
+                                <div class="overflow-hidden">
+                                    <div class="fw-semibold text-truncate"><%= ev.title %></div>
+                                    <div class="small text-muted text-capitalize">
+                                        <%= ev.event_type.replace('_',' ') %>
+                                        <% if (ev.city) { %> · <%= ev.city %><% } %>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    <% }) %>
+                </ul>
+            <% } %>
+            <div class="card-footer bg-white border-top">
+                <% if (isOwner) { %>
+                    <a href="/events/create" class="btn btn-sm btn-danger">
+                        <i class="bi bi-plus me-1"></i>Create Event
+                    </a>
+                <% } %>
+            </div>
+        </div>
+    </div>
+
+</div>

@@ -1,13 +1,12 @@
 
-const express = require('express');
+const express   = require('express');
 const pagePaths = require('../constants/pagePaths');
-const router = express.Router();
+const router    = express.Router();
 
 router.get('/', (req, res) => {
+    if (req.session.userId) return res.redirect('/dashboard');
     res.render(pagePaths.homePage, {
-       title: 'Home',
-       pageStylesheet: '/css/pages/home.css',
-       pageScript: '/js/pages/home.js'
+        title: 'ATA Certified Instructor Network'
     });
 });
 

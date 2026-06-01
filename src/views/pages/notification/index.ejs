@@ -1,0 +1,91 @@
+<%
+    const TYPE_ICON = {
+        judge_request_received:  { icon: 'bi-envelope-fill',     color: 'text-primary' },
+        judge_request_accepted:  { icon: 'bi-check-circle-fill',  color: 'text-success' },
+        judge_request_declined:  { icon: 'bi-x-circle-fill',      color: 'text-danger'  },
+        judge_request_cancelled: { icon: 'bi-slash-circle-fill',  color: 'text-warning' },
+        new_message:             { icon: 'bi-chat-fill',           color: 'text-info'    },
+        certification_review:    { icon: 'bi-patch-check-fill',   color: 'text-warning' }
+    };
+
+    const fmtDatetime = (d) => d
+        ? new Date(d).toLocaleString('en-US', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' })
+        : '';
+%>
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h2 class="h4 fw-bold mb-1">Notifications</h2>
+        <p class="text-muted small mb-0"><%= total %> notification<%= total !== 1 ? 's' : '' %></p>
+    </div>
+</div>
+
+<% if (notifications.length === 0) { %>
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-bell-slash fs-1 d-block mb-3 opacity-25"></i>
+        <p class="mb-0">You're all caught up — no notifications yet.</p>
+    </div>
+<% } else { %>
+    <div class="d-flex flex-column gap-2">
+        <% notifications.forEach(n => { %>
+            <%
+                const meta  = TYPE_ICON[n.type] || { icon: 'bi-bell-fill', color: 'text-secondary' };
+                const isNew = !n.is_read;
+            %>
+            <div class="card border-0 shadow-sm <%= isNew ? 'border-start border-danger border-3' : '' %>">
+                <div class="card-body py-3 px-4">
+                    <div class="d-flex align-items-start gap-3">
+
+                        <!-- Icon -->
+                        <div class="flex-shrink-0 mt-1">
+                            <i class="bi <%= meta.icon %> fs-5 <%= meta.color %>"></i>
+                        </div>
+
+                        <!-- Content -->
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-baseline justify-content-between gap-2 flex-wrap">
+                                <span class="fw-semibold small">
+                                    <%= n.title %>
+                                    <% if (isNew) { %>
+                                        <span class="badge bg-danger ms-1 fw-normal" style="font-size:.6rem;">New</span>
+                                    <% } %>
+                                </span>
+                                <span class="text-muted" style="font-size:.75rem; white-space:nowrap;">
+                                    <%= fmtDatetime(n.created_at) %>
+                                </span>
+                            </div>
+                            <% if (n.body) { %>
+                                <p class="small text-muted mb-1 mt-1"><%= n.body %></p>
+                            <% } %>
+                            <% if (n.href) { %>
+                                <a href="<%= n.href %>" class="small text-decoration-none fw-medium">
+                                    View details <i class="bi bi-arrow-right ms-1"></i>
+                                </a>
+                            <% } %>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+
+    <!-- Pagination -->
+    <% if (totalPages > 1) { %>
+        <nav class="mt-4" aria-label="Notifications pagination">
+            <ul class="pagination justify-content-center">
+                <li class="page-item <%= page <= 1 ? 'disabled' : '' %>">
+                    <a class="page-link" href="?page=<%= page - 1 %>"><i class="bi bi-chevron-left"></i></a>
+                </li>
+                <% for (let p = 1; p <= totalPages; p++) { %>
+                    <li class="page-item <%= p === page ? 'active' : '' %>">
+                        <a class="page-link" href="?page=<%= p %>"><%= p %></a>
+                    </li>
+                <% } %>
+                <li class="page-item <%= page >= totalPages ? 'disabled' : '' %>">
+                    <a class="page-link" href="?page=<%= page + 1 %>"><i class="bi bi-chevron-right"></i></a>
+                </li>
+            </ul>
+        </nav>
+    <% } %>
+<% } %>

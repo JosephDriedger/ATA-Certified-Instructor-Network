@@ -1,0 +1,401 @@
+<!-- Page header -->
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="h4 fw-bold mb-1">Instructor Profile</h2>
+        <p class="text-muted small mb-0">
+            <% if (profile) { %>
+                <a href="/instructors/<%= profile.id %>" class="text-decoration-none">
+                    <i class="bi bi-eye me-1"></i>View public profile
+                </a>
+            <% } else { %>
+                Complete your profile so schools and event organizers can find you.
+            <% } %>
+        </p>
+    </div>
+    <a href="/dashboard" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Dashboard
+    </a>
+</div>
+
+<form action="/profile/instructor" method="POST" enctype="multipart/form-data" novalidate>
+
+    <!-- ── Profile Photo ─────────────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom fw-semibold py-3">
+            <i class="bi bi-camera text-danger me-2"></i>Profile Photo
+        </div>
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-4 flex-wrap">
+
+                <!-- Current / preview -->
+                <div class="flex-shrink-0">
+                    <% const currentPhoto = formData.profile_photo_url || (profile && profile.profile_photo_url); %>
+                    <% if (currentPhoto) { %>
+                        <img id="photoPreview"
+                             src="<%= currentPhoto %>"
+                             alt="Profile photo"
+                             class="rounded-circle shadow-sm"
+                             width="100" height="100"
+                             style="object-fit:cover;">
+                    <% } else { %>
+                        <div id="photoPreviewPlaceholder"
+                             class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center shadow-sm"
+                             style="width:100px;height:100px;">
+                            <i class="bi bi-person-fill text-secondary" style="font-size:2.5rem;"></i>
+                        </div>
+                        <img id="photoPreview"
+                             src="" alt="Preview"
+                             class="rounded-circle shadow-sm d-none"
+                             width="100" height="100"
+                             style="object-fit:cover;">
+                    <% } %>
+                </div>
+
+                <div>
+                    <label for="profilePhoto" class="btn btn-outline-secondary btn-sm mb-2">
+                        <i class="bi bi-upload me-1"></i>
+                        <%= currentPhoto ? 'Change Photo' : 'Upload Photo' %>
+                    </label>
+                    <input type="file" id="profilePhoto" name="profilePhoto"
+                           class="d-none <%= errors.profilePhoto ? 'is-invalid' : '' %>"
+                           accept="image/jpeg,image/png,image/webp">
+                    <% if (errors.profilePhoto) { %>
+                        <div class="invalid-feedback d-block"><%= errors.profilePhoto %></div>
+                    <% } %>
+                    <p class="text-muted small mb-0">JPEG, PNG, or WebP · Max 5 MB</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Personal Information ──────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom fw-semibold py-3">
+            <i class="bi bi-person text-danger me-2"></i>Personal Information
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+
+                <!-- First / Last Name -->
+                <div class="col-sm-6">
+                    <label for="firstName" class="form-label fw-medium">First Name <span class="text-danger">*</span></label>
+                    <input type="text" id="firstName" name="firstName"
+                           class="form-control <%= errors.firstName ? 'is-invalid' : '' %>"
+                           value="<%= formData.firstName || (profile && profile.first_name) || user.displayName.split(' ')[0] || '' %>"
+                           required maxlength="100">
+                    <% if (errors.firstName) { %><div class="invalid-feedback"><%= errors.firstName %></div><% } %>
+                </div>
+                <div class="col-sm-6">
+                    <label for="lastName" class="form-label fw-medium">Last Name <span class="text-danger">*</span></label>
+                    <input type="text" id="lastName" name="lastName"
+                           class="form-control <%= errors.lastName ? 'is-invalid' : '' %>"
+                           value="<%= formData.lastName || (profile && profile.last_name) || user.displayName.split(' ').slice(1).join(' ') || '' %>"
+                           required maxlength="100">
+                    <% if (errors.lastName) { %><div class="invalid-feedback"><%= errors.lastName %></div><% } %>
+                </div>
+
+                <!-- ATA Member Number -->
+                <div class="col-sm-6">
+                    <label for="ataMemberNumber" class="form-label fw-medium">ATA Member Number</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white text-muted">ATA-</span>
+                        <input type="text" id="ataMemberNumber" name="ataMemberNumber"
+                               class="form-control <%= errors.ataMemberNumber ? 'is-invalid' : '' %>"
+                               value="<%= formData.ataMemberNumber || (profile && profile.ata_member_number) || '' %>"
+                               placeholder="TX-0012345"
+                               maxlength="50">
+                    </div>
+                    <% if (errors.ataMemberNumber) { %><div class="invalid-feedback d-block"><%= errors.ataMemberNumber %></div><% } %>
+                </div>
+
+                <!-- Years Teaching -->
+                <div class="col-sm-6">
+                    <label for="yearsExperience" class="form-label fw-medium">Years Teaching</label>
+                    <input type="number" id="yearsExperience" name="yearsExperience"
+                           class="form-control <%= errors.yearsExperience ? 'is-invalid' : '' %>"
+                           value="<%= formData.yearsExperience || (profile && profile.years_experience) || '' %>"
+                           min="0" max="70" placeholder="e.g. 10">
+                    <% if (errors.yearsExperience) { %><div class="invalid-feedback"><%= errors.yearsExperience %></div><% } %>
+                </div>
+
+                <!-- Rank -->
+                <div class="col-sm-6">
+                    <label for="rank" class="form-label fw-medium">Rank</label>
+                    <select id="rank" name="rank"
+                            class="form-select <%= errors.rank ? 'is-invalid' : '' %>">
+                        <option value="">Select rank…</option>
+                        <% RANKS.forEach(r => { %>
+                            <% const current = formData.rank || (profile && profile.rank); %>
+                            <option value="<%= r %>" <%= current === r ? 'selected' : '' %>><%= r %></option>
+                        <% }) %>
+                    </select>
+                    <% if (errors.rank) { %><div class="invalid-feedback"><%= errors.rank %></div><% } %>
+                </div>
+
+                <!-- Certification Level (filtered by current rank) -->
+                <div class="col-sm-6">
+                    <label for="certificationLevel" class="form-label fw-medium">Certification Level</label>
+                    <%
+                        const selectedRank = formData.rank || (profile && profile.rank) || '';
+                        const rankIdx      = RANKS.indexOf(selectedRank);
+                        const current      = formData.certificationLevel || (profile && profile.certification_level);
+                    %>
+                    <select id="certificationLevel" name="certificationLevel"
+                            class="form-select <%= errors.certificationLevel ? 'is-invalid' : '' %>">
+                        <option value="">Select level…</option>
+                        <% CERTIFICATION_LEVELS.forEach(l => { %>
+                            <%
+                                const minIdx   = CERT_MIN_RANK[l] ?? 0;
+                                const qualifies = rankIdx === -1 || rankIdx >= minIdx;
+                            %>
+                            <option value="<%= l %>"
+                                    <%= current === l ? 'selected' : '' %>
+                                    <%= !qualifies ? 'disabled' : '' %>>
+                                <%= l %>
+                                <% if (!qualifies) { %>
+                                    (requires <%= RANKS[minIdx] %>)
+                                <% } %>
+                            </option>
+                        <% }) %>
+                    </select>
+                    <% if (errors.certificationLevel) { %>
+                        <div class="invalid-feedback"><%= errors.certificationLevel %></div>
+                    <% } %>
+                    <div class="form-text">
+                        Only levels available for your rank are selectable.
+                        Mastership titles (Master and above) require ATA approval.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Contact Information ───────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom fw-semibold py-3">
+            <i class="bi bi-envelope text-danger me-2"></i>Contact Information
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+
+                <div class="col-sm-6">
+                    <label class="form-label fw-medium">Email Address</label>
+                    <input type="email" class="form-control bg-light" value="<%= user.displayName ? '' : '' %>"
+                           readonly disabled
+                           placeholder="<%= formData.email || (profile && profile.email) || '' %>">
+                    <div class="form-text">Email is tied to your login and cannot be changed here.</div>
+                </div>
+
+                <div class="col-sm-6">
+                    <label for="phone" class="form-label fw-medium">Phone Number</label>
+                    <input type="tel" id="phone" name="phone"
+                           class="form-control <%= errors.phone ? 'is-invalid' : '' %>"
+                           value="<%= formData.phone || (profile && profile.phone) || '' %>"
+                           placeholder="(555) 000-0000"
+                           maxlength="30">
+                    <% if (errors.phone) { %><div class="invalid-feedback"><%= errors.phone %></div><% } %>
+                    <div class="form-text">Only shown to signed-in users.</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Professional Background ───────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom fw-semibold py-3">
+            <i class="bi bi-briefcase text-danger me-2"></i>Professional Background
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-3">
+
+                <!-- Biography -->
+                <div class="col-12">
+                    <label for="bio" class="form-label fw-medium">Biography</label>
+                    <textarea id="bio" name="bio" rows="5"
+                              class="form-control <%= errors.bio ? 'is-invalid' : '' %>"
+                              placeholder="Tell schools and organizers about your background, teaching philosophy, and experience…"
+                              maxlength="2000"><%= formData.bio || (profile && profile.bio) || '' %></textarea>
+                    <% if (errors.bio) { %><div class="invalid-feedback"><%= errors.bio %></div><% } %>
+                    <div class="form-text text-end">
+                        <span id="bioCount">0</span> / 2,000 characters
+                    </div>
+                </div>
+
+                <!-- Location -->
+                <div class="col-sm-4">
+                    <label for="city" class="form-label fw-medium">City</label>
+                    <input type="text" id="city" name="city"
+                           class="form-control <%= errors.city ? 'is-invalid' : '' %>"
+                           value="<%= formData.city || (profile && profile.city) || '' %>"
+                           placeholder="Austin" maxlength="100">
+                    <% if (errors.city) { %><div class="invalid-feedback"><%= errors.city %></div><% } %>
+                </div>
+                <div class="col-sm-4">
+                    <label for="state" class="form-label fw-medium">State / Province</label>
+                    <input type="text" id="state" name="state"
+                           class="form-control <%= errors.state ? 'is-invalid' : '' %>"
+                           value="<%= formData.state || (profile && profile.state) || '' %>"
+                           placeholder="TX" maxlength="100">
+                    <% if (errors.state) { %><div class="invalid-feedback"><%= errors.state %></div><% } %>
+                </div>
+                <div class="col-sm-4">
+                    <label for="country" class="form-label fw-medium">Country</label>
+                    <input type="text" id="country" name="country"
+                           class="form-control <%= errors.country ? 'is-invalid' : '' %>"
+                           value="<%= formData.country || (profile && profile.country) || 'US' %>"
+                           placeholder="US" maxlength="100">
+                    <% if (errors.country) { %><div class="invalid-feedback"><%= errors.country %></div><% } %>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Specialties ───────────────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom fw-semibold py-3">
+            <i class="bi bi-star text-danger me-2"></i>Specialties
+        </div>
+        <div class="card-body p-4">
+            <p class="text-muted small mb-3">Select all areas you are qualified and willing to teach or judge.</p>
+            <%
+                const savedSpecialties = (profile && profile.specialties) ? profile.specialties : [];
+            %>
+            <div class="row g-2">
+                <% SPECIALTIES.forEach(s => { %>
+                    <div class="col-sm-6 col-lg-4">
+                        <div class="form-check">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                name="specialties[]"
+                                id="specialty_<%= s.replace(/\W+/g,'_') %>"
+                                value="<%= s %>"
+                                <%= savedSpecialties.includes(s) ? 'checked' : '' %>>
+                            <label class="form-check-label small"
+                                   for="specialty_<%= s.replace(/\W+/g,'_') %>">
+                                <%= s %>
+                            </label>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Availability & Settings ───────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom fw-semibold py-3">
+            <i class="bi bi-calendar2-check text-danger me-2"></i>Availability &amp; Settings
+        </div>
+        <div class="card-body p-4">
+            <div class="row g-4">
+
+                <!-- Availability switches -->
+                <div class="col-md-6">
+                    <p class="fw-medium mb-3 small text-uppercase text-muted letter-spacing">Availability</p>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" role="switch"
+                               id="isAvailableForEvents" name="isAvailableForEvents"
+                               <%= (profile && profile.is_available_for_events) || (!profile) ? 'checked' : '' %>>
+                        <label class="form-check-label" for="isAvailableForEvents">
+                            <i class="bi bi-calendar-event text-muted me-1"></i>
+                            Available for Events
+                        </label>
+                    </div>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" role="switch"
+                               id="isAvailableForTesting" name="isAvailableForTesting"
+                               <%= (profile && profile.is_available_for_testing) ? 'checked' : '' %>>
+                        <label class="form-check-label" for="isAvailableForTesting">
+                            <i class="bi bi-award text-muted me-1"></i>
+                            Available for Belt Testing
+                        </label>
+                    </div>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" role="switch"
+                               id="isAvailableForSeminars" name="isAvailableForSeminars"
+                               <%= (profile && profile.is_available_for_seminars) ? 'checked' : '' %>>
+                        <label class="form-check-label" for="isAvailableForSeminars">
+                            <i class="bi bi-mortarboard text-muted me-1"></i>
+                            Available for Seminars
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Travel radius + Visibility -->
+                <div class="col-md-6">
+                    <p class="fw-medium mb-3 small text-uppercase text-muted">Travel &amp; Visibility</p>
+
+                    <div class="mb-3">
+                        <label for="travelRadiusMiles" class="form-label fw-medium">
+                            Travel Radius (miles)
+                        </label>
+                        <div class="input-group" style="max-width:200px;">
+                            <input type="number" id="travelRadiusMiles" name="travelRadiusMiles"
+                                   class="form-control <%= errors.travelRadiusMiles ? 'is-invalid' : '' %>"
+                                   value="<%= formData.travelRadiusMiles || (profile && profile.travel_radius_miles) || '' %>"
+                                   min="0" max="5000" placeholder="e.g. 100">
+                            <span class="input-group-text bg-white text-muted">mi</span>
+                        </div>
+                        <% if (errors.travelRadiusMiles) { %>
+                            <div class="text-danger small mt-1"><%= errors.travelRadiusMiles %></div>
+                        <% } %>
+                        <div class="form-text">How far you're willing to travel for events.</div>
+                    </div>
+
+                    <div class="form-check form-switch mt-4">
+                        <input class="form-check-input" type="checkbox" role="switch"
+                               id="isPublic" name="isPublic"
+                               <%= (profile && profile.is_public) || (!profile) ? 'checked' : '' %>>
+                        <label class="form-check-label fw-medium" for="isPublic">
+                            Public Profile
+                        </label>
+                        <div class="form-text">
+                            When enabled, your profile appears in the instructor directory.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="d-flex justify-content-end gap-2 mb-2">
+        <a href="/dashboard" class="btn btn-outline-secondary px-4">Cancel</a>
+        <button type="submit" class="btn btn-danger px-4 fw-semibold">
+            <i class="bi bi-check-lg me-1"></i>Save Profile
+        </button>
+    </div>
+
+</form>
+
+<script>
+// ── Photo preview ─────────────────────────────────────────────────────────
+document.getElementById('profilePhoto').addEventListener('change', function () {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const preview = document.getElementById('photoPreview');
+        const placeholder = document.getElementById('photoPreviewPlaceholder');
+        preview.src = e.target.result;
+        preview.classList.remove('d-none');
+        if (placeholder) placeholder.classList.add('d-none');
+    };
+    reader.readAsDataURL(file);
+});
+
+// ── Bio character counter ─────────────────────────────────────────────────
+const bioEl  = document.getElementById('bio');
+const countEl = document.getElementById('bioCount');
+const updateCount = () => { countEl.textContent = bioEl.value.length; };
+bioEl.addEventListener('input', updateCount);
+updateCount();
+</script>

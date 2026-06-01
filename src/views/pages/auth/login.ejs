@@ -1,0 +1,81 @@
+<div class="row justify-content-center">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4">
+
+        <!-- Brand header -->
+        <div class="text-center mb-4">
+            <h1 class="fs-3 fw-bold mb-1">
+                <span class="text-danger">ATA</span> Instructor Network
+            </h1>
+            <p class="text-muted small mb-0">Sign in to your account</p>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4 p-md-5">
+
+                <h2 class="h5 fw-semibold mb-4 text-center">Welcome Back</h2>
+
+                <!-- General (non-field) error -->
+                <% if (errors.general) { %>
+                    <div class="alert alert-danger d-flex align-items-center gap-2 py-2" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i>
+                        <span><%= errors.general %></span>
+                    </div>
+                <% } %>
+
+                <form action="/login" method="POST" novalidate>
+
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label for="email" class="form-label fw-medium">Email Address</label>
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            class="form-control form-control-lg <%= errors.email ? 'is-invalid' : '' %>"
+                            value="<%= formData.email || '' %>"
+                            placeholder="jane@example.com"
+                            autocomplete="email"
+                            autofocus
+                            required>
+                        <% if (errors.email) { %>
+                            <div class="invalid-feedback"><%= errors.email %></div>
+                        <% } %>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-baseline mb-1">
+                            <label for="password" class="form-label fw-medium mb-0">Password</label>
+                            <a href="/forgot-password" class="text-muted small text-decoration-none">
+                                Forgot password?
+                            </a>
+                        </div>
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            class="form-control form-control-lg <%= errors.password ? 'is-invalid' : '' %>"
+                            autocomplete="current-password"
+                            required>
+                        <% if (errors.password) { %>
+                            <div class="invalid-feedback"><%= errors.password %></div>
+                        <% } %>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-danger btn-lg fw-semibold">
+                            Sign In
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+
+        <p class="text-center text-muted small mt-3">
+            Don't have an account?
+            <a href="/register" class="text-decoration-none fw-medium">Get started free</a>
+        </p>
+
+    </div>
+</div>

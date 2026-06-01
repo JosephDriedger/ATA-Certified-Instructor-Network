@@ -1,0 +1,130 @@
+<!-- Header -->
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="h4 fw-bold mb-1">New Message</h2>
+        <p class="text-muted small mb-0">
+            Start a direct conversation with another ACIN member.
+        </p>
+    </div>
+    <a href="/messages" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Inbox
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-9 col-lg-7">
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4 p-md-5">
+
+                <form action="/messages" method="POST" novalidate>
+
+                    <!-- Recipient -->
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">To</label>
+
+                        <% if (recipient) { %>
+                            <!-- Pre-filled from profile / judge-request flow -->
+                            <input type="hidden" name="recipientId" value="<%= recipient.id %>">
+                            <div class="d-flex align-items-center gap-3 p-3 bg-light rounded-3 border">
+                                <% if (recipient.profile_photo_url) { %>
+                                    <img src="<%= recipient.profile_photo_url %>"
+                                         alt="<%= recipient.first_name %>"
+                                         class="rounded-circle flex-shrink-0"
+                                         width="40" height="40"
+                                         style="object-fit:cover;">
+                                <% } else { %>
+                                    <div class="rounded-circle bg-secondary bg-opacity-15
+                                                d-flex align-items-center justify-content-center flex-shrink-0"
+                                         style="width:40px;height:40px;">
+                                        <i class="bi bi-person-fill text-secondary"></i>
+                                    </div>
+                                <% } %>
+                                <div>
+                                    <div class="fw-semibold">
+                                        <%= recipient.first_name %> <%= recipient.last_name %>
+                                    </div>
+                                    <div class="small text-muted"><%= recipient.role_label %></div>
+                                </div>
+                                <a href="/messages/compose" class="ms-auto btn btn-sm btn-outline-secondary">
+                                    Change
+                                </a>
+                            </div>
+                        <% } else { %>
+                            <!-- Manual entry -->
+                            <% if (errors.recipientId) { %>
+                                <div class="alert alert-danger py-2 small mb-2"><%= errors.recipientId %></div>
+                            <% } %>
+                            <input type="number"
+                                   name="recipientId"
+                                   class="form-control <%= errors.recipientId ? 'is-invalid' : '' %>"
+                                   value="<%= formData.recipientId || '' %>"
+                                   placeholder="Enter user ID (tip: use 'Message' button on a profile page)"
+                                   min="1">
+                            <div class="form-text">
+                                The easiest way to message someone is via the
+                                <strong>"Message"</strong> button on their
+                                <a href="/instructors" class="text-decoration-none">instructor profile</a>.
+                            </div>
+                        <% } %>
+                    </div>
+
+                    <!-- Subject (optional) -->
+                    <div class="mb-3">
+                        <label for="subject" class="form-label fw-medium">
+                            Subject <span class="text-muted fw-normal">(optional)</span>
+                        </label>
+                        <input type="text"
+                               id="subject"
+                               name="subject"
+                               class="form-control"
+                               value="<%= formData.subject || '' %>"
+                               placeholder="e.g. Belt testing on July 18th"
+                               maxlength="255">
+                    </div>
+
+                    <!-- Message body -->
+                    <div class="mb-4">
+                        <label for="body" class="form-label fw-medium">
+                            Message <span class="text-danger">*</span>
+                        </label>
+                        <textarea id="body"
+                                  name="body"
+                                  class="form-control <%= errors.body ? 'is-invalid' : '' %>"
+                                  rows="6"
+                                  maxlength="5000"
+                                  placeholder="Write your message here…"
+                                  required><%= formData.body || '' %></textarea>
+                        <% if (errors.body) { %>
+                            <div class="invalid-feedback"><%= errors.body %></div>
+                        <% } %>
+                        <div class="d-flex justify-content-end mt-1">
+                            <span id="bodyCount" class="form-text">0 / 5,000</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="/messages" class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button type="submit" class="btn btn-danger px-4 fw-semibold">
+                            <i class="bi bi-send me-1"></i>Send Message
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+const bodyEl   = document.getElementById('body');
+const countEl  = document.getElementById('bodyCount');
+const update   = () => {
+    countEl.textContent = `${bodyEl.value.length.toLocaleString()} / 5,000`;
+    countEl.style.color = bodyEl.value.length > 4500 ? '#dc3545' : '';
+};
+bodyEl.addEventListener('input', update);
+update();
+</script>

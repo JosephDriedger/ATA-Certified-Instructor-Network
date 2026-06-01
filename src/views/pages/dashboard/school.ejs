@@ -1,0 +1,376 @@
+<%
+    const fmtDate = (d) => d
+        ? new Date(d).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' })
+        : '—';
+
+    const fmtTime = (t) => {
+        if (!t) return '';
+        const [h, m] = String(t).split(':');
+        const hour = parseInt(h, 10);
+        return ` · ${hour % 12 || 12}:${m} ${hour < 12 ? 'AM' : 'PM'}`;
+    };
+%>
+
+<!-- School switcher (shown when owner has multiple schools) -->
+<% if (ownedSchools && ownedSchools.length > 1) { %>
+    <div class="d-flex align-items-center gap-2 mb-4 flex-wrap">
+        <span class="small text-muted fw-medium me-1">My Schools:</span>
+        <% ownedSchools.forEach(s => { %>
+            <a href="/dashboard?school=<%= s.id %>"
+               class="btn btn-sm <%= school && s.id === school.id ? 'btn-dark' : 'btn-outline-secondary' %>">
+                <%= s.name %>
+            </a>
+        <% }) %>
+        <a href="/schools/mine/new" class="btn btn-sm btn-outline-danger ms-1">
+            <i class="bi bi-plus me-1"></i>Add School
+        </a>
+    </div>
+<% } %>
+
+<!-- Header -->
+<div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-2">
+    <div>
+        <h2 class="h4 fw-bold mb-1">
+            <%= school ? school.name : 'School Dashboard' %>
+        </h2>
+        <p class="text-muted small mb-0">
+            Welcome back, <strong><%= user.displayName %></strong> ·
+            <span class="badge bg-primary">School Owner</span>
+            <% if (school && school.slug) { %>
+                <a href="/schools/<%= school.slug %>" class="ms-2 text-decoration-none small">
+                    <i class="bi bi-eye me-1"></i>View public page
+                </a>
+            <% } %>
+        </p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <% if (school) { %>
+            <a href="/judge-requests/create?school=<%= school.id %>" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-person-plus me-1"></i>Request Judge
+            </a>
+            <a href="/events/create?school=<%= school.id %>" class="btn btn-danger btn-sm">
+                <i class="bi bi-plus-lg me-1"></i>Post Event
+            </a>
+        <% } else { %>
+            <a href="/schools/mine/new" class="btn btn-danger">
+                <i class="bi bi-building me-1"></i>Create School
+            </a>
+        <% } %>
+    </div>
+</div>
+
+<!-- ── No school profile state ────────────────────────────────────────────── -->
+<% if (!school) { %>
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5 px-4">
+            <i class="bi bi-building-add text-muted fs-1 d-block mb-3 opacity-25"></i>
+            <h5 class="fw-bold mb-2">Set Up Your School Profile</h5>
+            <p class="text-muted mb-4 mx-auto" style="max-width:420px;">
+                Create a school profile to post events, manage your instructor roster,
+                and send guest judge requests.
+            </p>
+            <a href="/schools/mine/<%= school ? school.id : 'new' %>/edit" class="btn btn-danger px-4 fw-semibold">
+                Get Started
+            </a>
+        </div>
+    </div>
+<% } else { %>
+
+<!-- ── Stat cards ─────────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3 p-3">
+                <div class="bg-danger bg-opacity-10 rounded-3 p-3 flex-shrink-0">
+                    <i class="bi bi-award-fill text-danger fs-4"></i>
+                </div>
+                <div>
+                    <div class="fs-3 fw-bold lh-1 mb-1"><%= stats.upcomingEvents %></div>
+                    <div class="text-muted small">Upcoming Events</div>
+                </div>
+            </div>
+            <a href="/events/create" class="card-footer bg-white border-top text-decoration-none text-muted small py-2 px-3">
+                Post event <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3 p-3">
+                <div class="bg-warning bg-opacity-10 rounded-3 p-3 flex-shrink-0">
+                    <i class="bi bi-hourglass-split text-warning fs-4"></i>
+                </div>
+                <div>
+                    <div class="fs-3 fw-bold lh-1 mb-1"><%= stats.pending %></div>
+                    <div class="text-muted small">Pending Requests</div>
+                </div>
+            </div>
+            <a href="/bookings?status=pending" class="card-footer bg-white border-top text-decoration-none text-muted small py-2 px-3">
+                View requests <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3 p-3">
+                <div class="bg-success bg-opacity-10 rounded-3 p-3 flex-shrink-0">
+                    <i class="bi bi-check-circle-fill text-success fs-4"></i>
+                </div>
+                <div>
+                    <div class="fs-3 fw-bold lh-1 mb-1"><%= stats.upcomingAccepted %></div>
+                    <div class="text-muted small">Confirmed Judges</div>
+                </div>
+            </div>
+            <a href="/bookings?status=accepted" class="card-footer bg-white border-top text-decoration-none text-muted small py-2 px-3">
+                View confirmed <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body d-flex align-items-center gap-3 p-3">
+                <div class="bg-primary bg-opacity-10 rounded-3 p-3 flex-shrink-0">
+                    <i class="bi bi-people-fill text-primary fs-4"></i>
+                </div>
+                <div>
+                    <div class="fs-3 fw-bold lh-1 mb-1"><%= stats.rosterCount %></div>
+                    <div class="text-muted small">Roster Instructors</div>
+                </div>
+            </div>
+            <a href="/schools/<%= school.slug %>" class="card-footer bg-white border-top text-decoration-none text-muted small py-2 px-3">
+                View roster <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Upcoming events + Pending judge requests ────────────────────────────── -->
+<div class="row g-4 mb-4">
+
+    <!-- Upcoming events -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom fw-semibold py-3 d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-calendar-event text-danger me-2"></i>Upcoming Events</span>
+                <a href="/events/create" class="btn btn-sm btn-danger">
+                    <i class="bi bi-plus me-1"></i>Create
+                </a>
+            </div>
+            <% if (upcomingEvents.length === 0) { %>
+                <div class="card-body text-center text-muted py-5">
+                    <i class="bi bi-calendar-x fs-2 d-block mb-2 opacity-25"></i>
+                    <p class="mb-2">No upcoming events yet.</p>
+                    <a href="/events/create" class="btn btn-sm btn-danger">Post Your First Event</a>
+                </div>
+            <% } else { %>
+                <ul class="list-group list-group-flush">
+                    <% upcomingEvents.forEach(ev => { %>
+                        <%
+                            const evDate = new Date(ev.start_datetime);
+                            const typeLabel = (ev.event_type || 'other').replace('_', ' ');
+                            const isTest = ev.event_type === 'belt_testing';
+                        %>
+                        <li class="list-group-item px-4 py-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <!-- Date block -->
+                                <div class="text-center flex-shrink-0 bg-light rounded-3 p-2" style="min-width:48px;">
+                                    <div class="fw-bold text-danger lh-1" style="font-size:1.1rem;">
+                                        <%= evDate.getDate() %>
+                                    </div>
+                                    <div class="text-uppercase text-muted lh-1" style="font-size:.6rem;">
+                                        <%= evDate.toLocaleString('en-US', { month:'short' }) %>
+                                    </div>
+                                </div>
+                                <!-- Info -->
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <div class="fw-semibold text-truncate"><%= ev.title %></div>
+                                    <div class="text-muted text-capitalize small">
+                                        <% if (isTest) { %>
+                                            <i class="bi bi-award me-1 text-danger"></i>
+                                        <% } %>
+                                        <%= typeLabel %>
+                                        <% if (ev.city) { %> · <%= ev.city %><% } %>
+                                    </div>
+                                </div>
+                                <a href="/bookings" class="btn btn-sm btn-outline-secondary flex-shrink-0">
+                                    Judges
+                                </a>
+                            </div>
+                        </li>
+                    <% }) %>
+                </ul>
+                <div class="card-footer bg-white border-top">
+                    <a href="/schools/mine/<%= school.id %>/manage" class="btn btn-sm btn-outline-secondary">All events</a>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- Pending judge requests -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom fw-semibold py-3 d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="bi bi-hourglass-split text-warning me-2"></i>Pending Requests
+                    <% if (stats.pending > 0) { %>
+                        <span class="badge bg-warning text-dark ms-1"><%= stats.pending %></span>
+                    <% } %>
+                </span>
+                <a href="/instructors" class="btn btn-sm btn-outline-danger">Find Judges</a>
+            </div>
+            <% if (pendingRequests.length === 0) { %>
+                <div class="card-body text-center text-muted py-5">
+                    <i class="bi bi-envelope-open fs-2 d-block mb-2 opacity-25"></i>
+                    <p class="mb-2">No pending requests.</p>
+                    <a href="/instructors" class="btn btn-sm btn-outline-danger">Browse Instructors</a>
+                </div>
+            <% } else { %>
+                <ul class="list-group list-group-flush">
+                    <% pendingRequests.forEach(req => { %>
+                        <li class="list-group-item px-4 py-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <!-- Instructor avatar -->
+                                <% if (req.instructor_photo) { %>
+                                    <img src="<%= req.instructor_photo %>"
+                                         class="rounded-circle flex-shrink-0"
+                                         width="36" height="36"
+                                         style="object-fit:cover;">
+                                <% } else { %>
+                                    <div class="rounded-circle bg-secondary bg-opacity-15
+                                                d-flex align-items-center justify-content-center flex-shrink-0"
+                                         style="width:36px;height:36px;">
+                                        <i class="bi bi-person-fill text-secondary small"></i>
+                                    </div>
+                                <% } %>
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <div class="fw-semibold small text-truncate">
+                                        <%= req.instructor_first %> <%= req.instructor_last %>
+                                    </div>
+                                    <div class="text-muted" style="font-size:.72rem;">
+                                        <%= fmtDate(req.requested_date) %>
+                                        <% if (req.event_title) { %>
+                                            · <%= req.event_title %>
+                                        <% } %>
+                                    </div>
+                                </div>
+                                <a href="/bookings/<%= req.id %>" class="btn btn-sm btn-outline-secondary flex-shrink-0">
+                                    View
+                                </a>
+                            </div>
+                        </li>
+                    <% }) %>
+                </ul>
+                <div class="card-footer bg-white border-top">
+                    <a href="/bookings?status=pending" class="btn btn-sm btn-outline-secondary">All requests</a>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Roster preview + Stats row ─────────────────────────────────────────── -->
+<div class="row g-4">
+
+    <!-- Roster -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom fw-semibold py-3 d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-people text-danger me-2"></i>Instructor Roster</span>
+                <a href="/schools/<%= school.slug %>" class="btn btn-sm btn-outline-secondary">View all</a>
+            </div>
+            <% if (roster.length === 0) { %>
+                <div class="card-body text-center text-muted py-4">
+                    <i class="bi bi-people fs-2 d-block mb-2 opacity-25"></i>
+                    <p class="small mb-0">
+                        Instructors affiliate with your school from their profile page.
+                    </p>
+                </div>
+            <% } else { %>
+                <ul class="list-group list-group-flush">
+                    <% roster.forEach(m => { %>
+                        <li class="list-group-item px-4 py-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <% if (m.profile_photo_url) { %>
+                                    <img src="<%= m.profile_photo_url %>"
+                                         class="rounded-circle flex-shrink-0"
+                                         width="36" height="36"
+                                         style="object-fit:cover;">
+                                <% } else { %>
+                                    <div class="rounded-circle bg-secondary bg-opacity-15
+                                                d-flex align-items-center justify-content-center flex-shrink-0"
+                                         style="width:36px;height:36px;">
+                                        <i class="bi bi-person-fill text-secondary small"></i>
+                                    </div>
+                                <% } %>
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold small">
+                                        <%= m.first_name %> <%= m.last_name %>
+                                        <% if (m.is_primary) { %>
+                                            <span class="badge bg-danger fw-normal ms-1" style="font-size:.6rem;">Primary</span>
+                                        <% } %>
+                                    </div>
+                                    <div class="text-muted" style="font-size:.72rem;">
+                                        <%= m.role_title || m.rank || 'Instructor' %>
+                                    </div>
+                                </div>
+                                <a href="/instructors/<%= m.instructor_id %>" class="btn btn-sm btn-outline-secondary">
+                                    Profile
+                                </a>
+                            </div>
+                        </li>
+                    <% }) %>
+                </ul>
+            <% } %>
+        </div>
+    </div>
+
+    <!-- School summary stats -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom fw-semibold py-3">
+                <i class="bi bi-bar-chart-line text-danger me-2"></i>School Statistics
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <% const schoolStats = [
+                        { label:'Total Events',       value: stats.totalEvents,       icon:'bi-calendar3',           color:'text-primary'   },
+                        { label:'Upcoming Events',    value: stats.upcomingEvents,    icon:'bi-calendar-event',      color:'text-success'   },
+                        { label:'Upcoming Tests',     value: stats.upcomingTests,     icon:'bi-award',               color:'text-danger'    },
+                        { label:'Roster Size',        value: stats.rosterCount,       icon:'bi-people',              color:'text-primary'   },
+                        { label:'Judges Confirmed',   value: stats.upcomingAccepted,  icon:'bi-check-circle',        color:'text-success'   },
+                        { label:'Bookings Completed', value: stats.completed,         icon:'bi-trophy',              color:'text-warning'   }
+                    ]; %>
+                    <% schoolStats.forEach(s => { %>
+                        <div class="col-6">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi <%= s.icon %> <%= s.color %>"></i>
+                                <div>
+                                    <div class="fw-bold"><%= s.value ?? 0 %></div>
+                                    <div class="text-muted" style="font-size:.7rem;"><%= s.label %></div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+
+                <div class="border-top pt-3 mt-3 d-flex flex-wrap gap-2">
+                    <a href="/schools/mine/<%= school ? school.id : 'new' %>/edit" class="btn btn-sm btn-outline-secondary flex-fill">
+                        <i class="bi bi-pencil me-1"></i>Edit Profile
+                    </a>
+                    <a href="/schools/mine/<%= school.id %>/manage" class="btn btn-sm btn-outline-danger flex-fill">
+                        <i class="bi bi-gear me-1"></i>Manage
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<% } %> <!-- end school exists -->

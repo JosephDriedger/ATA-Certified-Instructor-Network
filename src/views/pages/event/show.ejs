@@ -1,0 +1,208 @@
+<%
+    const fmtDatetime = (d) => d
+        ? new Date(d).toLocaleString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' })
+        : '—';
+    const fmtDate = (d) => d
+        ? new Date(d).toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' })
+        : '—';
+
+    const TYPE_LABEL = {
+        tournament: 'Tournament', seminar: 'Seminar',
+        belt_testing: 'Belt Testing', camp: 'Camp', other: 'Event'
+    };
+%>
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb small">
+        <li class="breadcrumb-item"><a href="/events" class="text-decoration-none">Events</a></li>
+        <li class="breadcrumb-item active"><%= event.title %></li>
+    </ol>
+</nav>
+
+<!-- Hero card -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4 p-md-5">
+        <div class="row g-4 align-items-start">
+
+            <!-- Date block -->
+            <div class="col-auto">
+                <div class="text-center bg-danger bg-opacity-10 rounded-3 p-3" style="min-width:70px;">
+                    <div class="fw-bold text-danger lh-1" style="font-size:2rem;">
+                        <%= new Date(event.start_datetime).getDate() %>
+                    </div>
+                    <div class="text-uppercase text-muted lh-1 mt-1" style="font-size:.7rem;">
+                        <%= new Date(event.start_datetime).toLocaleString('en-US', { month:'short', year:'numeric' }) %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Title + meta -->
+            <div class="col">
+                <div class="mb-1">
+                    <span class="badge bg-light border text-capitalize fw-normal me-2">
+                        <%= TYPE_LABEL[event.event_type] || event.event_type %>
+                    </span>
+                    <span class="badge bg-success fw-normal">Published</span>
+                </div>
+                <h1 class="h3 fw-bold mb-2"><%= event.title %></h1>
+
+                <div class="d-flex flex-wrap gap-3 small text-muted">
+                    <% if (event.school_name) { %>
+                        <span>
+                            <i class="bi bi-building me-1"></i>
+                            <a href="/schools/<%= event.school_slug %>" class="text-decoration-none text-muted">
+                                <%= event.school_name %>
+                            </a>
+                        </span>
+                    <% } %>
+                    <span>
+                        <i class="bi bi-clock me-1"></i>
+                        <%= fmtDatetime(event.start_datetime) %>
+                    </span>
+                    <% if (event.city || event.state) { %>
+                        <span>
+                            <i class="bi bi-geo-alt me-1"></i>
+                            <%= [event.location_name, event.city, event.state].filter(Boolean).join(', ') %>
+                        </span>
+                    <% } %>
+                    <% if (event.max_participants) { %>
+                        <span>
+                            <i class="bi bi-people me-1"></i>
+                            Up to <%= event.max_participants %> participants
+                        </span>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Owner actions -->
+            <% if (isOwner) { %>
+                <div class="col-auto">
+                    <div class="d-flex gap-2">
+                        <a href="/events/<%= event.id %>/recommendations"
+                           class="btn btn-danger btn-sm">
+                            <i class="bi bi-award me-1"></i>Find Judges
+                        </a>
+                    </div>
+                </div>
+            <% } %>
+
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    <!-- Left: Description -->
+    <div class="col-lg-8">
+        <% if (event.description) { %>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-info-circle text-danger me-2"></i>About This Event
+                    </h5>
+                    <p class="mb-0" style="white-space:pre-line;line-height:1.7;color:#343a40;"><%= event.description.trim() %></p>
+                </div>
+            </div>
+        <% } %>
+
+        <!-- Location -->
+        <% if (event.address || event.city) { %>
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-geo-alt text-danger me-2"></i>Location
+                    </h5>
+                    <address class="mb-0 small" style="font-style:normal;color:#343a40;line-height:1.8;">
+                        <% if (event.location_name) { %><strong class="d-block"><%= event.location_name %></strong><% } %>
+                        <% if (event.address)       { %><span class="d-block"><%= event.address %></span><% } %>
+                        <%
+                            const locationLine = [
+                                event.city,
+                                event.state,
+                                event.postal_code
+                            ].filter(Boolean).join(', ');
+                            const country = (event.country || '').toUpperCase();
+                            const hideCountry = ['US', 'USA', 'CA', 'CAN', 'CANADA'].includes(country);
+                        %>
+                        <span class="d-block">
+                            <%= locationLine %>
+                            <% if (country && !hideCountry) { %>, <%= event.country %><% } %>
+                        </span>
+                    </address>
+                </div>
+            </div>
+        <% } %>
+    </div>
+
+    <!-- Right: Details sidebar -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3">
+                    <i class="bi bi-calendar3 text-danger me-2"></i>Event Details
+                </h5>
+                <dl class="row small mb-0" style="--bs-link-color: inherit;">
+                    <dt class="col-5 text-muted fw-normal">Starts</dt>
+                    <dd class="col-7 text-dark fw-medium"><%= fmtDatetime(event.start_datetime) %></dd>
+
+                    <dt class="col-5 text-muted fw-normal">Ends</dt>
+                    <dd class="col-7 text-dark fw-medium"><%= fmtDatetime(event.end_datetime) %></dd>
+
+                    <% if (event.registration_deadline) { %>
+                        <dt class="col-5 text-muted fw-normal">Register by</dt>
+                        <dd class="col-7 text-dark fw-medium"><%= fmtDate(event.registration_deadline) %></dd>
+                    <% } %>
+
+                    <% if (event.max_participants) { %>
+                        <dt class="col-5 text-muted fw-normal">Capacity</dt>
+                        <dd class="col-7 text-dark"><%= event.max_participants %> participants</dd>
+                    <% } %>
+
+                    <dt class="col-5 text-muted fw-normal">Type</dt>
+                    <dd class="col-7 text-dark text-capitalize"><%= (event.event_type || '').replace('_', ' ') %></dd>
+
+                    <% if (event.judges_needed) { %>
+                        <dt class="col-5 text-muted fw-normal">Judges</dt>
+                        <dd class="col-7 text-dark"><%= event.judges_needed %> required</dd>
+                    <% } %>
+
+                    <% if (event.required_judge_rank) { %>
+                        <dt class="col-5 text-muted fw-normal">Min. Judge Rank</dt>
+                        <dd class="col-7">
+                            <span class="badge bg-danger bg-opacity-10 text-danger fw-normal">
+                                <%= event.required_judge_rank %>
+                            </span>
+                        </dd>
+                    <% } %>
+                </dl>
+            </div>
+
+            <% if (!user) { %>
+                <div class="card-footer bg-light border-top text-center py-3">
+                    <p class="small text-muted mb-2">Sign in to contact the organiser.</p>
+                    <a href="/login" class="btn btn-sm btn-danger px-4">Sign In</a>
+                </div>
+            <% } else if (user.roleId === 2 && !isOwner) { %>
+                <div class="card-footer bg-white border-top text-center py-3">
+                    <a href="/judge-requests/create" class="btn btn-sm btn-danger w-100">
+                        <i class="bi bi-person-plus me-1"></i>Request a Judge
+                    </a>
+                </div>
+            <% } %>
+        </div>
+
+        <% if (event.school_name) { %>
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 text-center">
+                    <i class="bi bi-building text-danger fs-3 mb-2 d-block"></i>
+                    <div class="fw-semibold mb-1"><%= event.school_name %></div>
+                    <a href="/schools/<%= event.school_slug %>" class="btn btn-sm btn-outline-secondary mt-1">
+                        View School
+                    </a>
+                </div>
+            </div>
+        <% } %>
+    </div>
+
+</div>
